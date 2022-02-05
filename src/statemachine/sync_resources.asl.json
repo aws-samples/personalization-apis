@@ -1,0 +1,34 @@
+{
+    "Comment": "Personalization API configuration to dependent resource synchronization.",
+    "StartAt": "SyncTasks",
+    "States": {
+        "SyncTasks": {
+            "Type": "Parallel",
+            "End": true,
+            "Branches": [
+                {
+                    "StartAt": "SyncCacheSettings",
+                    "States": {
+                        "SyncCacheSettings": {
+                            "Type": "Task",
+                            "Resource": "${SyncCacheSettingsFunctionArn}",
+                            "InputPath": "$.detail.content",
+                            "End": true
+                        }
+                    }
+                },
+                {
+                    "StartAt": "SyncDynamoDbTables",
+                    "States": {
+                        "SyncDynamoDbTables": {
+                            "Type": "Task",
+                            "Resource": "${SyncDyanamoDbTableFunctionArn}",
+                            "InputPath": "$.detail.content",
+                            "End": true
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

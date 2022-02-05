@@ -1,0 +1,11 @@
+{
+    "name": "edge_auth_function",
+    "version": "1.0.0",
+    "description": "Edge authentication with Cognito",
+    "main": "index.js",
+    "license": "Apache-2.0",
+    "dependencies": {
+      "jsonwebtoken": "^8.5.1",
+      "jwk-to-pem": "^2.0.5"
+    }
+}

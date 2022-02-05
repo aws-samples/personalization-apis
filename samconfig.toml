@@ -1,0 +1,29 @@
+version = 0.1
+[oauth2]
+[oauth2.deploy]
+[oauth2.deploy.parameters]
+stack_name = "p13n-apis-oauth2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "ApplicationName=\"P13n-APIs-oauth2\" EnvironmentName=\"prod\" TimeZone=\"UTC\" AuthenticationScheme=\"OAuth2-Cognito\" CreateCognitoResources=\"Yes\" ApiEntryPointType=\"API-Gateway-HTTP\" CacheScheme=\"CloudFront\""
+image_repositories = []
+
+[apikey]
+[apikey.deploy]
+[apikey.deploy.parameters]
+stack_name = "p13n-apis-apikey"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "ApplicationName=\"P13n-APIs-apikey\" EnvironmentName=\"prod\" TimeZone=\"UTC\" AuthenticationScheme=\"ApiKey\" CreateCognitoResources=\"No\" ApiEntryPointType=\"API-Gateway-REST\" CacheScheme=\"API-Gateway-Cache\""
+image_repositories = []
+
+[noauth]
+[noauth.deploy]
+[noauth.deploy.parameters]
+stack_name = "p13n-apis-noauth"
+region = "us-east-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "ApplicationName=\"P13n-APIs-noauth\" EnvironmentName=\"prod\" TimeZone=\"UTC\" AuthenticationScheme=\"None\" CreateCognitoResources=\"No\" ApiEntryPointType=\"API-Gateway-HTTP\" CacheScheme=\"CloudFront\""
+image_repositories = []

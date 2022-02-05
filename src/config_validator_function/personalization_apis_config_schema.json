@@ -1,0 +1,588 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "/schemas/personalization_apis_config_schema.json",
+    "title": "Personalization APIs Configuration",
+    "description": "",
+    "type": "object",
+    "required": [ "namespaces" ],
+    "properties": {
+        "version": {
+            "description": "Indicates the version of the configuration. Will be emitted as the value of the 'X-Personalization-Config-Version' response header.",
+            "type": "string"
+        },
+        "description": {
+            "description": "Description of this configuration. Informative only.",
+            "type": "string"
+        },
+        "cacheControl": {
+            "$ref": "#/$defs/cacheControl",
+            "description": "Cache control settings that apply to all recommenders unless overridden at the namespace, recommender, or variation level."
+        },
+        "autoContext": {
+            "$ref": "#/$defs/autoContext",
+            "description": "Automatic context rules that apply to all Personalize recommenders unless overridden at the namespace, recommender, or variation level."
+        },
+        "namespaces": {
+            "description": "Namespaces keyed by the namespace path which is used to map API requests to a namespace. Analagous to an applications and/or Personalize dataset groups.",
+            "$ref": "#/$defs/namespaces"
+        }
+    },
+    "additionalProperties": false,
+    "$defs": {
+        "namespaces": {
+            "type": "object",
+            "patternProperties": {
+                "^[a-zA-Z0-9_-]*$": {
+                    "type": "object",
+                    "description": "Namespace configuration that contains one or more recommenders.",
+                    "required": [ "recommenders" ],
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name for this namespace. Informative only."
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Description for this namespace. Informative only."
+                        },
+                        "cacheControl": {
+                            "$ref": "#/$defs/cacheControl",
+                            "description": "Cache control settings that apply to all recommenders for this namespace unless overridden at the recommender or variation level (overrides config at root)."
+                        },
+                        "autoContext": {
+                            "$ref": "#/$defs/autoContext",
+                            "description": "Automatic context rules that apply to all Personalize recommenders for this namespace unless overridden at the recommender or variation level (overrides config at root)."
+                        },
+                        "recommenders": {
+                            "description": "Recommenders for the namespace keyed by the recommender action type. Action must be 'recommend-items', 'related-items', or 'rerank-items'.",
+                            "items": { "$ref": "#/$defs/recommenderAction" }
+                        },
+                        "inferenceItemMetadata": {
+                            "$ref": "#/$defs/inferenceItemMetadata",
+                            "description": ""
+                        },
+                        "eventTargets": {
+                            "type": "array",
+                            "description": "Destinations to send events to via the events API endpoint for a namespace",
+                            "items": {
+                                "anyOf": [
+                                    {
+                                        "type": "object",
+                                        "required": [ "type", "trackingId" ],
+                                        "description": "Amazon Personalize event tracker",
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "enum": [ "personalize-event-tracker" ],
+                                                "description": ""
+                                            },
+                                            "trackingId": {
+                                                "type": "string",
+                                                "description": "Personalize event tracker tracking ID.",
+                                                "pattern": "[a-zA-Z0-9\\-]+"
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    },
+                                    {
+                                        "type": "object",
+                                        "required": [ "type", "streamName" ],
+                                        "description": "Amazon Kinesis data stream or firehose.",
+                                        "properties": {
+                                            "type": {
+                                                "type": "string",
+                                                "enum": [ "kinesis-stream", "kinesis-firehose" ],
+                                                "description": "Identifies this variation as a Lambda function."
+                                            },
+                                            "streamName": {
+                                                "type": "string",
+                                                "description": "Kinesis stream or firehose name",
+                                                "pattern": "[a-zA-Z0-9_.-]+"
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "recommenderAction": {
+            "type": "object",
+            "description": "Defines the recommender action and its configuration.",
+            "patternProperties": {
+                "^(?:recommend-items|related-items|rerank-items)$": {
+                    "$ref": "#/$defs/recommender"
+                }
+            },
+            "additionalProperties": false
+        },
+        "recommender": {
+            "type": "object",
+            "description": "Recommender path that uniquely identifies the recommender within a namespace and API action. The recommender path is used to map an API request to a recommender.",
+            "patternProperties": {
+                "^[a-zA-Z0-9_-]*$": {
+                    "type": "object",
+                    "required": [ "variations" ],
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "description": "Name for this recommender. Informative only."
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Description for this recommender. Informative only."
+                        },
+                        "cacheControl": {
+                            "$ref": "#/$defs/cacheControl",
+                            "description": "Cache control settings that apply to all variations for this recommender (overrides configs at root and namespace)."
+                        },
+                        "responsePostProcessor": {
+                            "$ref": "#/$defs/responsePostProcessor",
+                            "description": "Post process the response before returning it to the client"
+                        },
+                        "experiments": {
+                            "$ref": "#/$defs/experimentFeature",
+                            "description": "Controls how the variation is selected for each request for the recommender keyed by a feature name."
+                        },
+                        "variations": {
+                            "$ref": "#/$defs/variations",
+                            "description": "Variations for the recommender."
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "variations": {
+            "type": "object",
+            "description": "Variations for a recommender that are keyed by a unique variation name. The variation name must match an Evidently feature name if an experiment is also defined for the recommender. Otherwise, the first variation is used.",
+            "patternProperties": {
+                "^[a-zA-Z0-9_-]*$": {
+                    "anyOf": [
+                        {
+                            "type": "object",
+                            "required": [ "type", "arn" ],
+                            "description": "Amazon Personalize campaign or recommender",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": [ "personalize-campaign", "personalize-recommender" ],
+                                    "description": ""
+                                },
+                                "arn": {
+                                    "type": "string",
+                                    "description": "ARN of the Personalize campaign or recommender.",
+                                    "pattern": "^arn:[\\w-]+:personalize:[a-z]{2}-((?:gov|iso|isob)-)?[a-z]+-\\d{1}?:\\d{12}?:(?:campaign|recommender)\/.*$"
+                                },
+                                "filters": {
+                                    "type": "array",
+                                    "description": "Filters to choose from when determining which one to apply to a request. The first filter that matches the condition of the request is used.",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [ "arn" ],
+                                        "description": "Personalize filter to use with this recommender when retrieving recommendations.",
+                                        "properties": {
+                                            "arn": {
+                                                "type": "string",
+                                                "description": "ARN of the Personalize Filter.",
+                                                "pattern": "^arn:[\\w-]+:personalize:[a-z]{2}-((?:gov|iso|isob)-)?[a-z]+-\\d{1}?:\\d{12}?:filter\/.*$"
+                                            },
+                                            "condition": {
+                                                "type": "string",
+                                                "description": "Indicates if a user is required to evaluate the expression for this filter. This is useful when a filter is specified for a related items recommender but should be conditionally applied depending on whether a user is specified in the request.",
+                                                "enum": [ "user-required" ]
+                                            },
+                                            "autoDynamicFilterValues": {
+                                                "$ref": "#/$defs/autoDynamicFilterValues",
+                                                "description": "Automatic dynamic filter value rules."
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    }
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "required": [ "type", "arn" ],
+                            "description": "AWS Lambda function to invoke to retrieve recommendations for this recommender.",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": [ "function" ],
+                                    "description": "Identifies this variation as a Lambda function."
+                                },
+                                "arn": {
+                                    "type": "string",
+                                    "description": "AWS Lambda function ARN",
+                                    "pattern": "^arn:[\\w-]+:lambda:[a-z]{2}-((?:gov|iso|isob)-)?[a-z]+-\\d{1}?:\\d{12}?:function\/.*$"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "required": [ "type", "endpointName" ],
+                            "description": "Amazon SageMaker inference endpoint to invoke to retrieve recommendations for this recommender.",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": [ "sagemaker" ],
+                                    "description": "Identifies this variation as a SageMaker inference endpoint."
+                                },
+                                "endpointName": {
+                                    "type": "string",
+                                    "description": "Amazon SageMaker endpoint name"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        {
+                            "type": "object",
+                            "required": [ "type", "url" ],
+                            "description": "HTTP endpoint to call to retrieve recommendations",
+                            "properties": {
+                                "type": {
+                                    "type": "string",
+                                    "enum": [ "http" ],
+                                    "description": ""
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "description": ""
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    ]
+                }
+            },
+            "additionalProperties": false
+        },
+        "experimentFeature": {
+            "type": "object",
+            "description": "Evidently experiments for the recommender keyed by the feature name specified in the Evidently feature and in API requests. If only one experiment is defined in the configuration, it will be used as the default if a feature is not specified on the request.",
+            "patternProperties": {
+                "^[-a-zA-Z0-9._]*$": {
+                    "$ref": "#/$defs/experiment"
+                }
+            },
+            "additionalProperties": false
+        },
+        "experiment": {
+            "type": "object",
+            "required": [ "method", "project", "metrics" ],
+            "properties": {
+                "method": {
+                    "type": "string",
+                    "enum": [ "evidently" ]
+                },
+                "project": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Informative description of experiment."
+                },
+                "metrics": {
+                    "type": "object",
+                    "description": "Metrics supported by the experiment keyed by the metric name as defined for the Evidently experiment.",
+                    "patternProperties": {
+                        "^[\\S]+$": {
+                            "type": "object",
+                            "required": [ "entityIdKey", "valueKey" ],
+                            "properties": {
+                                "entityIdKey": {
+                                    "type": "string",
+                                    "description": "Entity ID Key for the Evidently metric to track exposures and conversions (e.g., 'userDetails.userId')."
+                                },
+                                "valueKey": {
+                                    "type": "string",
+                                    "description": "Value Key for the Evidently metric to track exposures and conversions (e.g., 'details.productClicked')."
+                                }
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "cacheControl": {
+            "type": "object",
+            "required": [ "userSpecified", "syntheticUserSpecified", "noUserSpecified" ],
+            "properties": {
+                "autoProvision": {
+                    "type": "boolean",
+                    "description": "Indicates whether the personalization API application should automatically update the CloudFront cache and origin request policies"
+                },
+                "userSpecified": {
+                    "$ref": "#/$defs/cacheControlType",
+                    "description": "Cache control settings to use when a user is specified in the request"
+                },
+                "syntheticUserSpecified": {
+                    "$ref": "#/$defs/cacheControlType",
+                    "description": "Cache control settings to use when a synthetic user is specified in the request"
+                },
+                "noUserSpecified": {
+                    "$ref": "#/$defs/cacheControlType",
+                    "description": "Cache control settings to use when a user is NOT specified in the request"
+                }
+            },
+            "additionalProperties": false
+        },
+        "cacheControlType": {
+            "type": "object",
+            "required": [ "maxAge", "directives" ],
+            "properties": {
+                "maxAge": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "The maximum amount of time (in seconds) that responses may be cached. A 'max-age' directive with this value will be included in the Cache-Control response header."
+                },
+                "directives": {
+                    "type": "string",
+                    "description": "Additional directives, as comma delimited list, to include in the Cache-Control response header. For example, 'public' indicates that responses may be cached in shared caches like CloudFront and 'private' indicates that responses may only be cached in browsers."
+                }
+            },
+            "additionalProperties": false
+        },
+        "autoContext": {
+            "type": "object",
+            "description": "Automatic context fields and rules keyed by Amazon Personalize field name in camel case format (i.e. 'deviceType' rather than 'DEVICE_TYPE').",
+            "patternProperties": {
+                "^[a-zA-Z0-9]+$": {
+                    "type": "object",
+                    "required": [ "type", "rules" ],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Data type for the context field.",
+                            "enum": [ "string", "integer", "long", "float" ]
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Informative description of auto context field and rules."
+                        },
+                        "default": {
+                            "type": [ "string", "number" ],
+                            "description": "Default value to use when no rules are matched for the field."
+                        },
+                        "evaluateAll": {
+                            "type": "boolean",
+                            "description": "Whether to evaluate all rules, potentially resolving to multiple values, or stop at the first matched rule",
+                            "default": false
+                        },
+                        "rules": {
+                            "type": "array",
+                            "description": "Rules for evaluating automatic context values for the field",
+                            "items": { "$ref": "#/$defs/autoContextOrFilterRule" }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "autoDynamicFilterValues": {
+            "type": "object",
+            "description": "Automatic filter parameter value rules keyed by filter parameter name.",
+            "patternProperties": {
+                "^[a-zA-Z0-9_-]+$": {
+                    "type": "object",
+                    "required": [ "type", "rules" ],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Data type for the parameter value",
+                            "enum": [ "string", "integer", "long", "float" ]
+                        },
+                        "description": {
+                            "type": "string",
+                            "description": "Informative description of auto filter field and rules."
+                        },
+                        "default": {
+                            "type": [ "string", "number" ],
+                            "description": "Default value to use when no rules are matched"
+                        },
+                        "evaluateAll": {
+                            "type": "boolean",
+                            "description": "Whether to evaluate all rules, potentially resolving to multiple values, or stop at the first matched rule",
+                            "default": false
+                        },
+                        "rules": {
+                            "type": "array",
+                            "description": "Rules for evaluating automatic filter values for the filter parameter",
+                            "items": { "$ref": "#/$defs/autoContextOrFilterRule" }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "autoContextOrFilterRule": {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "required": [ "type", "header" ],
+                    "description": "Rule that matches a header value based on an operator and value and, if true, optionally maps to a final resolved value.",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [ "header-value" ],
+                            "description": "Rule type based on an HTTP request header value"
+                        },
+                        "header": {
+                            "type": "string",
+                            "description": "HTTP request header name"
+                        },
+                        "valueMappings": {
+                            "type": "array",
+                            "description": "Optional value mapping expressions to resolve to final value",
+                            "items": {
+                                "type": "array",
+                                "$ref": "#/$defs/ruleValueMapping"
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                {
+                    "type": "object",
+                    "required": [ "type" ],
+                    "description": "Rules based on temporal/seasonal aspects of the current time in the user's time zone and hemisphere",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [ "hour-of-day", "day-of-week", "season-of-year" ],
+                            "description": "Temporal/seasonal aspect"
+                        },
+                        "valueMappings": {
+                            "type": "array",
+                            "description": "Optional value mapping expressions to resolve to final value",
+                            "items": {
+                                "type": "array",
+                                "$ref": "#/$defs/ruleValueMapping"
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
+        "ruleValueMapping": {
+            "type": "object",
+            "required": [ "operator", "value", "mapTo" ],
+            "description": "Maps a rule's value to a final resolved value",
+            "properties": {
+                "operator": {
+                    "type": "string",
+                    "enum": [ "equals", "less-than", "greater-than", "contains", "starts-with", "ends-with" ],
+                    "description": "Operator to apply to rule value"
+                },
+                "value": {
+                    "type": [ "string", "number" ],
+                    "description": "Value to compare rule value to using the operator"
+                },
+                "mapTo": {
+                    "type": [ "string", "number" ],
+                    "description": "Final resolved value to use if the rule's value applied to operator and value is true"
+                },
+                "additionalProperties": false
+            }
+        },
+        "inferenceItemMetadata": {
+            "description": "Inference item metadata datastore configuration. Defines how the Personalization APIs store and cache item metadata used to decorate responses.",
+            "oneOf": [
+                {
+                    "type": "object",
+                    "description": "Local DBM database that is built and downloaded to the local Lambda volume from the S3 staging bucket for each API function instance.",
+                    "required": [ "type" ],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [ "localdb" ]
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                {
+                    "type": "object",
+                    "description": "DynamoDB table that is populated with item metadata from S3 staging bucket and queried to decorate API responses.",
+                    "required": [ "type" ],
+                    "properties": {
+                        "autoProvision": {
+                            "type": "boolean",
+                            "description": "Indicates whether the personalization API application should automatically create and update DynamoDB tables according to the configuration"
+                        },
+                        "type": {
+                            "type": "string",
+                            "enum": [ "dynamodb" ]
+                        },
+                        "billingMode": {
+                            "type": "string",
+                            "description": "DynamoDB billing mode to use when auto provisioning is enabled.",
+                            "enum": [ "PROVISIONED", "PAY_PER_REQUEST" ]
+                        },
+                        "provisionedThroughput": {
+                            "type": "object",
+                            "description": "DynamoDB provisioned throughput read and write capacity units to use when auto provisioning is enabled.",
+                            "properties": {
+                                "readCapacityUnits": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "writeCapacityUnits": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                }
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
+        "responsePostProcessor": {
+            "type": "object",
+            "description": "Post process the response before returning it to the client",
+            "oneOf": [
+                {
+                    "type": "object",
+                    "description": "AWS Lambda response post-processor",
+                    "required": [ "type", "arn" ],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [ "lambda" ]
+                        },
+                        "arn": {
+                            "type": "string",
+                            "description": "AWS Lambda function ARN",
+                            "pattern": "^arn:[\\w-]+:lambda:[a-z]{2}-((?:gov|iso|isob)-)?[a-z]+-\\d{1}?:\\d{12}?:function\/.*$"
+                        },
+                        "lookAheadMultiplier": {
+                            "type": "number",
+                            "description": "Multiplier to apply to the 'numResults' query string parameter before making the inference call to the origin recommender. This is useful in situations where the post-processor logic may remove items from the intermediate inference response and therefore increases the liklihood of returning the caller's desired 'numResults' in the post-processed result.",
+                            "minimum": 1
+                        },
+                        "lookAheadMaximumValue": {
+                            "type": "number",
+                            "description": "Used with 'lookAheadMultiplier' to set a cap on how many items are requested from the origin recommender. The look ahead value will therefore be min(numResults * lookAheadMultiplier, lookAheadMaximumValue)",
+                            "minimum": 1
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        }
+    }
+}

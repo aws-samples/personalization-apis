@@ -1,0 +1,4 @@
+# Note: AWS Lambda Power Tools is required but is satisfied by a Lambda layer at runtime.
+# Remove once Lambda runtime is updated with 1.20.15+ (for recommenders)
+boto3==1.20.26
+pytz

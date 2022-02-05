@@ -1,0 +1,1076 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: (P13N-RT-APIS) - Real-time personalization APIs for recommendation systems
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Description: Application name used to name AppConfig application.
+
+  EnvironmentName:
+    Type: String
+    Description: >
+      Application environment name (such as "dev", "staging", "prod", etc). Used for set the stage in API Gateway and to organize
+      application configuration resources in AppConfig.
+    Default: prod
+
+  TimeZone:
+    Type: String
+    Description: >
+      Initialize the solution's time zone to match your default local time zone. This is used as the default time zone if the user's
+      time zone is not available when determining time-based automatic context.
+    Default: UTC
+
+  AuthenticationScheme:
+    Type: String
+    Description: >
+      Desired authentication scheme to protect API access. Note that "ApiKey" requires "API-Gateway-REST" for the API entry point type.
+      If you select "OAuth2-Cognito", be sure to deploy the edge authentication template as well (must be done separately).
+    AllowedValues:
+      - 'OAuth2-Cognito'
+      - 'ApiKey'
+      - 'None'
+    Default: 'OAuth2-Cognito'
+
+  CreateCognitoResources:
+    Type: String
+    Description: >
+      Create Amazon Cognito user pool and client that can be used to create OAuth2 tokens for API authentication. Only applicable when
+      the authentication scheme is "OAuth2-Cognito". If you have an existing Cognito user pool, select "No"
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+
+  ApiEntryPointType:
+    Type: String
+    Description: >
+      API entry point type for requests that access the personalization APIs. "API-Gateway-REST" is recommended when the authentication
+      scheme is "None" or "OAuth2-Cognito" for the best performance and lowest cost.
+    AllowedValues:
+      - 'API-Gateway-HTTP'
+      - 'API-Gateway-REST'
+      # FUTURE: - 'ALB'
+    Default: 'API-Gateway-HTTP'
+
+  CacheScheme:
+    Type: String
+    Description: >
+      Caching scheme to deploy with the API entry point type. Note that using "API-Gateway-REST" for the API entry point type
+      includes a CloudFront distribution that is transparently managed by API Gateway. However, this distribution does not include
+      caching so you should select "API-Gateway-Cache" with "API-Gatewa-REST".
+    AllowedValues:
+      - 'CloudFront'
+      - 'API-Gateway-Cache'
+      - 'Both'
+      - 'None'
+    Default: 'CloudFront'
+
+Conditions:
+  DeployApiGatewayHttp: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-HTTP' ]
+  DeployApiGatewayRest: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-REST' ]
+  DeployApiKey: !And
+    - !Condition DeployApiGatewayRest
+    - !Equals [ !Ref AuthenticationScheme, 'ApiKey' ]
+  DeployApiGatewayCache: !Or
+    - !Equals [ !Ref CacheScheme, 'API-Gateway-Cache' ]
+    - !Equals [ !Ref CacheScheme, 'Both' ]
+  DeployCloudFront: !Or
+    - !Equals [ !Ref CacheScheme, 'CloudFront' ]
+    - !Equals [ !Ref CacheScheme, 'Both' ]
+  DeployCognito: !Equals [ !Ref CreateCognitoResources, 'Yes' ]
+
+Rules:
+  ApiKeyAuthTypeRule:
+    RuleCondition: !Equals [ !Ref AuthenticationScheme, 'ApiKey' ]
+    Assertions:
+      - Assert: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-REST' ]
+        AssertDescription: 'For "ApiKey" authentication, "API-Gateway-REST" is required.'
+  CachingSchemeApiGatewayRule:
+    RuleCondition: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-REST' ]
+    Assertions:
+      - Assert:
+          'Fn::Contains':
+            -
+              - 'API-Gateway-Cache'
+              - 'None'
+            - !Ref CacheScheme
+        AssertDescription: 'For "API-Gateway-REST" entry point type, only "API-Gateway-Cache" or "None" can be selected for cache scheme.'
+
+Mappings:
+  RegionMap:
+    # AppConfig Lambda extension ARNs pulled from the following page and filtered by supported Personalize regions
+    # https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-integration-lambda-extensions.html#appconfig-integration-lambda-extensions-add
+    us-east-1:
+      AppConfigExtensionArn: "arn:aws:lambda:us-east-1:027255383542:layer:AWS-AppConfig-Extension:61"
+    us-east-2:
+      AppConfigExtensionArn: "arn:aws:lambda:us-east-2:728743619870:layer:AWS-AppConfig-Extension:47"
+    us-west-2:
+      AppConfigExtensionArn: "arn:aws:lambda:us-west-2:359756378197:layer:AWS-AppConfig-Extension:89"
+    ca-central-1:
+      AppConfigExtensionArn: "arn:aws:lambda:ca-central-1:039592058896:layer:AWS-AppConfig-Extension:47"
+    eu-central-1:
+      AppConfigExtensionArn: "arn:aws:lambda:eu-central-1:066940009817:layer:AWS-AppConfig-Extension:54"
+    eu-west-1:
+      AppConfigExtensionArn: "arn:aws:lambda:eu-west-1:434848589818:layer:AWS-AppConfig-Extension:59"
+    cn-north-1:
+      AppConfigExtensionArn: "arn:aws-cn:lambda:cn-north-1:615057806174:layer:AWS-AppConfig-Extension:43"
+    ap-northeast-1:
+      AppConfigExtensionArn: "arn:aws:lambda:ap-northeast-1:980059726660:layer:AWS-AppConfig-Extension:45"
+    ap-northeast-2:
+      AppConfigExtensionArn: "arn:aws:lambda:ap-northeast-2:826293736237:layer:AWS-AppConfig-Extension:54"
+    ap-southeast-1:
+      AppConfigExtensionArn: "arn:aws:lambda:ap-southeast-1:421114256042:layer:AWS-AppConfig-Extension:45"
+    ap-southeast-2:
+      AppConfigExtensionArn: "arn:aws:lambda:ap-southeast-2:080788657173:layer:AWS-AppConfig-Extension:54"
+    ap-south-1:
+      AppConfigExtensionArn: "arn:aws:lambda:ap-south-1:554480029851:layer:AWS-AppConfig-Extension:55"
+  DDB:
+    Parameters:
+      ItemsTableNamePrefix: 'PersonalizationApiItemMetadata_'
+      ItemsTablePrimaryKeyFieldName: 'id'
+
+Globals:
+  Api:
+    TracingEnabled: true
+  HttpApi:
+    Tags:
+      CreatedBy: Personalization-APIs-Solution
+  Function:
+    Timeout: 5
+    Runtime: python3.9
+    Tracing: Active
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+        POWERTOOLS_SERVICE_NAME: personalization_apis
+        POWERTOOLS_METRICS_NAMESPACE: !Sub 'Personalization-APIs-${AWS::StackName}'
+        POWERTOOLS_LOGGER_LOG_EVENT: true
+        POWERTOOLS_LOGGER_SAMPLE_RATE: 0
+    Tags:
+      CreatedBy: Personalization-APIs-Solution
+
+Resources:
+  ItemMetadataBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  CommonLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: src/layer
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: python3.9
+
+##########################################################################
+#  API Gateway Resources                                                 #
+##########################################################################
+  RestApi:
+    Condition: DeployApiGatewayRest
+    Type: AWS::Serverless::Api
+    Properties:
+      Description: REST API for personalization API endpoints
+      StageName: !Ref EnvironmentName
+      CacheClusterEnabled: !If [ DeployApiGatewayCache, true, false ]
+      CacheClusterSize: "1.6"
+      MinimumCompressionSize: 2048
+      Auth:
+        ApiKeyRequired: !If [ DeployApiKey, true, false ]
+        AddDefaultAuthorizerToCorsPreflight: false
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          Description: Usage plan for personalization REST APIs and API Key
+      EndpointConfiguration:
+        Type: EDGE
+      MethodSettings:
+        - ResourcePath: '/recommend-items/{namespace}/{recommender}/{userId}'
+          HttpMethod: 'OPTIONS'
+          CachingEnabled: false
+        - ResourcePath: '/recommend-items/{namespace}/{recommender}/{userId}'
+          HttpMethod: 'GET'
+          CachingEnabled: true
+          CacheTtlInSeconds: 10
+        - ResourcePath: '/related-items/{namespace}/{recommender}/{itemId}'
+          HttpMethod: 'OPTIONS'
+          CachingEnabled: false
+        - ResourcePath: '/related-items/{namespace}/{recommender}/{itemId}'
+          HttpMethod: 'GET'
+          CachingEnabled: true
+          CacheTtlInSeconds: 30
+        - ResourcePath: '/rerank-items/{namespace}/{recommender}/{userId}/{itemIds}'
+          HttpMethod: 'OPTIONS'
+          CachingEnabled: false
+        - ResourcePath: '/rerank-items/{namespace}/{recommender}/{userId}/{itemIds}'
+          HttpMethod: 'GET'
+          CachingEnabled: true
+          CacheTtlInSeconds: 10
+        - ResourcePath: '/rerank-items/{namespace}/{recommender}/{userId}'
+          HttpMethod: 'OPTIONS'
+          CachingEnabled: false
+        - ResourcePath: '/rerank-items/{namespace}/{recommender}/{userId}'
+          HttpMethod: 'POST'
+          CachingEnabled: false
+        - ResourcePath: '/events/{namespace}'
+          HttpMethod: 'OPTIONS'
+          CachingEnabled: false
+        - ResourcePath: '/events/{namespace}'
+          HttpMethod: 'POST'
+          CachingEnabled: false
+
+  ApiKey:
+    Condition: DeployApiKey
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Description: REST API Key to use when making API calls to personalization APIs
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref RestApi
+          StageName: !Ref RestApi.Stage
+
+  ApiKeyUsagePlan:
+    Condition: DeployApiKey
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref ApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref RestApi.UsagePlan
+
+  HttpApi:
+    Condition: DeployApiGatewayHttp
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Description: HTTP API for personalization API endpoints
+      StageName: !Ref EnvironmentName
+      CorsConfiguration:
+        AllowMethods:
+          - GET
+          - HEAD
+          - OPTIONS
+          - POST
+          - PUT
+        AllowOrigins:
+          - '*'
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+          - X-Amz-Date
+        MaxAge: 600
+      Tags:
+        CreatedBy: Personalization-APIs-Solution
+
+##########################################################################
+#  Function Resources                                                    #
+##########################################################################
+  PersonalizationHttpApiFunction:
+    Condition: DeployApiGatewayHttp
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Function that implements real-time personalization APIs
+      Timeout: 5
+      CodeUri: src/personalization_api_function
+      Handler: main.lambda_handler
+      MemorySize: 1024
+      Layers:
+        - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Ref CommonLayer
+      Environment:
+        Variables:
+          AWS_APPCONFIG_EXTENSION_PREFETCH_LIST: !Sub '/applications/${ApplicationName}/environments/${EnvironmentName}/configurations/Personalization-API-Config'
+          TZ: !Ref TimeZone
+          ApiType: HTTP
+          ItemMetadataBucket: !Ref ItemMetadataBucket
+          ItemsTablePrimaryKeyFieldName: !FindInMap [DDB, Parameters, ItemsTablePrimaryKeyFieldName]
+      Role: !GetAtt PersonalizationApiExecutionRole.Arn
+      Events:
+        GetRecommendItems:
+          Type: HttpApi
+          Properties:
+            Path: /recommend-items/{namespace}/{recommender}/{userId}
+            Method: get
+            PayloadFormatVersion: "2.0"
+            ApiId: !Ref HttpApi
+        GetRelatedItems:
+          Type: HttpApi
+          Properties:
+            Path: /related-items/{namespace}/{recommender}/{itemId}
+            Method: get
+            PayloadFormatVersion: "2.0"
+            ApiId: !Ref HttpApi
+        GetRerankItems:
+          Type: HttpApi
+          Properties:
+            Path: /rerank-items/{namespace}/{recommender}/{userId}/{itemIds}
+            Method: get
+            PayloadFormatVersion: "2.0"
+            ApiId: !Ref HttpApi
+        PostRerankItems:
+          Type: HttpApi
+          Properties:
+            Path: /rerank-items/{namespace}/{recommender}/{userId}
+            Method: post
+            PayloadFormatVersion: "2.0"
+            ApiId: !Ref HttpApi
+        PostEvents:
+          Type: HttpApi
+          Properties:
+            Path: /events/{namespace}
+            Method: post
+            PayloadFormatVersion: "2.0"
+            ApiId: !Ref HttpApi
+
+  PersonalizationRestApiFunction:
+    Condition: DeployApiGatewayRest
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Function that implements real-time personalization APIs
+      Timeout: 5
+      CodeUri: src/personalization_api_function
+      Handler: main.lambda_handler
+      MemorySize: 1024
+      Layers:
+        - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Ref CommonLayer
+      Environment:
+        Variables:
+          AWS_APPCONFIG_EXTENSION_PREFETCH_LIST: !Sub '/applications/${ApplicationName}/environments/${EnvironmentName}/configurations/Personalization-API-Config'
+          TZ: !Ref TimeZone
+          ApiType: REST
+          ItemMetadataBucket: !Ref ItemMetadataBucket
+          ItemsTablePrimaryKeyFieldName: !FindInMap [DDB, Parameters, ItemsTablePrimaryKeyFieldName]
+      Role: !GetAtt PersonalizationApiExecutionRole.Arn
+      Events:
+        OptionsRecommendItems:
+          Type: Api
+          Properties:
+            Path: /recommend-items/{namespace}/{recommender}/{userId}
+            Method: options
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: true
+                  Required: true
+              - method.request.path.recommender:
+                  Caching: true
+                  Required: true
+              - method.request.path.userId:
+                  Caching: true
+                  Required: true
+        GetRecommendItems:
+          Type: Api
+          Properties:
+            Path: /recommend-items/{namespace}/{recommender}/{userId}
+            Method: get
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: true
+                  Required: true
+              - method.request.path.recommender:
+                  Caching: true
+                  Required: true
+              - method.request.path.userId:
+                  Caching: true
+                  Required: true
+              - method.request.querystring.numResults:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.filter:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.filterValues:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.context:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.decorateItems:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.syntheticUser:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.feature:
+                  Caching: true
+                  Required: false
+        OptionsRelatedItems:
+          Type: Api
+          Properties:
+            Path: /related-items/{namespace}/{recommender}/{itemId}
+            Method: options
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: true
+                  Required: true
+              - method.request.path.recommender:
+                  Caching: true
+                  Required: true
+              - method.request.path.itemId:
+                  Caching: true
+                  Required: true
+        GetRelatedItems:
+          Type: Api
+          Properties:
+            Path: /related-items/{namespace}/{recommender}/{itemId}
+            Method: get
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: true
+                  Required: true
+              - method.request.path.recommender:
+                  Caching: true
+                  Required: true
+              - method.request.path.itemId:
+                  Caching: true
+                  Required: true
+              - method.request.querystring.numResults:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.userId:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.filter:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.filterValues:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.context:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.decorateItems:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.feature:
+                  Caching: true
+                  Required: false
+        OptionsRerankItems:
+          Type: Api
+          Properties:
+            Path: /rerank-items/{namespace}/{recommender}/{userId}/{itemIds}
+            Method: options
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: true
+                  Required: true
+              - method.request.path.recommender:
+                  Caching: true
+                  Required: true
+              - method.request.path.userId:
+                  Caching: true
+                  Required: true
+              - method.request.path.itemIds:
+                  Caching: true
+                  Required: false
+        GetRerankItems:
+          Type: Api
+          Properties:
+            Path: /rerank-items/{namespace}/{recommender}/{userId}/{itemIds}
+            Method: get
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: true
+                  Required: true
+              - method.request.path.recommender:
+                  Caching: true
+                  Required: true
+              - method.request.path.userId:
+                  Caching: true
+                  Required: true
+              - method.request.path.itemIds:
+                  Caching: true
+                  Required: true
+              - method.request.querystring.filter:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.filterValues:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.context:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.decorateItems:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.syntheticUser:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.feature:
+                  Caching: true
+                  Required: false
+        PostRerankItems:
+          Type: Api
+          Properties:
+            Path: /rerank-items/{namespace}/{recommender}/{userId}
+            Method: post
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: true
+                  Required: true
+              - method.request.path.recommender:
+                  Caching: true
+                  Required: true
+              - method.request.path.userId:
+                  Caching: true
+                  Required: true
+              - method.request.querystring.filter:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.filterValues:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.context:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.decorateItems:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.syntheticUser:
+                  Caching: true
+                  Required: false
+              - method.request.querystring.feature:
+                  Caching: true
+                  Required: false
+        OptionsEvents:
+          Type: Api
+          Properties:
+            Path: /events/{namespace}
+            Method: options
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: false
+                  Required: true
+        PostEvents:
+          Type: Api
+          Properties:
+            Path: /events/{namespace}
+            Method: post
+            RestApiId: !Ref RestApi
+            RequestParameters:
+              - method.request.path.namespace:
+                  Caching: false
+                  Required: true
+
+  PersonalizationApiExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Execution role for the core API function. Attach additional policies to this role as needed in your configuration.
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  PersonalizationApiBasePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Base policy for the personalization API function
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - appconfig:GetLatestConfiguration
+              - appconfig:StartConfigurationSession
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:appconfig:${AWS::Region}:${AWS::AccountId}:application/${AppConfigApplication}/environment/${AppConfigEnvironment}/configuration/${AppConfigConfigurationProfile}'
+          - Effect: Allow
+            Action:
+              - personalize:GetRecommendations
+              - personalize:GetPersonalizedRanking
+              - personalize:PutEvents
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchGetItem
+            Resource:
+              - !Sub
+                - 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TablePrefix}*'
+                - { TablePrefix: !FindInMap [DDB, Parameters, ItemsTableNamePrefix] }
+          - Effect: Allow
+            Action:
+              - evidently:EvaluateFeature
+              - evidently:PutProjectEvents
+            Resource: '*'
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ItemMetadataBucket}/localdbs/*'
+      Roles:
+        - Ref: PersonalizationApiExecutionRole
+
+  LoadItemMetadataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Loads items from a file in S3 into the configured datastore type
+      Timeout: 900
+      CodeUri: src/load_item_metadata_function
+      Handler: main.lambda_handler
+      MemorySize: 1024
+      Layers:
+        - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Ref CommonLayer
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - appconfig:GetLatestConfiguration
+              - appconfig:StartConfigurationSession
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:appconfig:${AWS::Region}:${AWS::AccountId}:application/${AppConfigApplication}/environment/${AppConfigEnvironment}/configuration/${AppConfigConfigurationProfile}'
+          - Effect: Allow
+            Action:
+              - dynamodb:BatchWriteItem
+              - dynamodb:DescribeTable
+              - dynamodb:Scan
+            Resource:
+              - !Sub
+                - 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TablePrefix}*'
+                - { TablePrefix: !FindInMap [DDB, Parameters, ItemsTableNamePrefix] }
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::*'
+      Environment:
+        Variables:
+          AWS_APPCONFIG_EXTENSION_PREFETCH_LIST: !Sub '/applications/${ApplicationName}/environments/${EnvironmentName}/configurations/Personalization-API-Config'
+          ItemsTablePrimaryKeyFieldName: !FindInMap [DDB, Parameters, ItemsTablePrimaryKeyFieldName]
+          ItemsTableNamePrefix: !FindInMap [DDB, Parameters, ItemsTableNamePrefix]
+      Events:
+        BucketEvent:
+          Type: S3
+          Properties:
+            Bucket: !Ref ItemMetadataBucket
+            Events: 's3:ObjectCreated:*'
+            Filter:
+              S3Key:
+                Rules:
+                - Name: prefix
+                  Value: 'import/'
+
+  ConfigValidatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Validates the configuration set in AppConfig and fires events to synchronizes CloudFront policies and DynamoDB tables
+      Timeout: 15
+      CodeUri: src/config_validator_function
+      Handler: main.lambda_handler
+      MemorySize: 256
+      Layers:
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+      Policies:
+        - Statement:
+          - Sid: EventBridgePolicy
+            Effect: Allow
+            Action:
+              - events:PutEvents
+            Resource: '*'
+
+  ConfigValidatorPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ConfigValidatorFunction.Arn
+      Principal: appconfig.amazonaws.com
+      SourceArn: !Sub 'arn:${AWS::Partition}:appconfig:${AWS::Region}:${AWS::AccountId}:*'
+
+##########################################################################
+#  Cognito Resources                                                     #
+##########################################################################
+  CognitoUserPool:
+    Condition: DeployCognito
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub '${AWS::StackName}-User-Pool'
+      AliasAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+        UnusedAccountValidityDays: 7
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: true
+
+  CognitoUserPoolClient:
+    Condition: DeployCognito
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub '${AWS::StackName}-Client'
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      RefreshTokenValidity: 30
+      SupportedIdentityProviders:
+        - COGNITO
+      UserPoolId: !Ref CognitoUserPool
+
+##########################################################################
+#  Step Functions Resources                                              #
+##########################################################################
+  ConfigResourceSyncStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: src/statemachine/sync_resources.asl.json
+      DefinitionSubstitutions:
+        SyncCacheSettingsFunctionArn: !GetAtt SyncCacheSettingsFunction.Arn
+        SyncDyanamoDbTableFunctionArn: !GetAtt SyncDynamoDbTableFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SyncCacheSettingsFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SyncDynamoDbTableFunction
+      Events:
+        EBRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - personalization.apis
+              detail-type:
+                - PersonalizationApisConfigurationChange
+      Tracing:
+        Enabled: true
+
+  SyncCacheSettingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Synchronizes CloudFront policies or API Gateway cache settings with configuration in AppConfig
+      Timeout: 30
+      CodeUri: src/sync_cache_settings_function
+      Handler: main.lambda_handler
+      MemorySize: 256
+      Layers:
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+      Role: !GetAtt SyncCacheSettingsExecutionRole.Arn
+      Environment:
+        Variables:
+          RestApiId: !If [ DeployApiGatewayRest, !Ref RestApi, '' ]
+          RestApiStage: !If [ DeployApiGatewayRest, !Ref RestApi.Stage, '' ]
+          CloudFrontCachePolicyId: !If [ DeployCloudFront, !Ref ApiCdnCachePolicy, '' ]
+          CloudFrontOriginRequestPolicyId: !If [ DeployCloudFront, !Ref ApiCdnOriginRequestPolicy, '' ]
+
+  SyncCacheSettingsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Execution role for the cache settings synchronization function.
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  SyncApiGatewayCachePolicy:
+    Condition: DeployApiGatewayRest
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SyncApiGatewayCachePolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - apigateway:GET
+              - apigateway:PATCH
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}::/restapis/${RestApi}/stages/${RestApi.Stage}'
+      Roles:
+        - Ref: SyncCacheSettingsExecutionRole
+
+  SyncCloudFrontPoliciesPolicy:
+    Condition: DeployCloudFront
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: SyncCloudFrontPoliciesPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - cloudfront:GetCachePolicy
+              - cloudfront:UpdateCachePolicy
+            Resource: '*' # Mapping to resource does not seem to work
+          - Effect: Allow
+            Action:
+              - cloudfront:GetOriginRequestPolicy
+              - cloudfront:UpdateOriginRequestPolicy
+            Resource: '*' # Mapping to resource does not seem to work
+      Roles:
+        - Ref: SyncCacheSettingsExecutionRole
+
+  SyncDynamoDbTableFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Synchronizes DynamoDB tables with configuration in AppConfig
+      Timeout: 30
+      CodeUri: src/sync_dynamodb_tables_function
+      Handler: main.lambda_handler
+      MemorySize: 256
+      Layers:
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:CreateTable
+              - dynamodb:DescribeTable
+              - dynamodb:UpdateTable
+            Resource:
+              - !Sub
+                - 'arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${TablePrefix}*'
+                - { TablePrefix: !FindInMap [DDB, Parameters, ItemsTableNamePrefix] }
+      Environment:
+        Variables:
+          ItemsTablePrimaryKeyFieldName: !FindInMap [DDB, Parameters, ItemsTablePrimaryKeyFieldName]
+          ItemsTableNamePrefix: !FindInMap [DDB, Parameters, ItemsTableNamePrefix]
+
+##########################################################################
+#  CloudFront Resources                                                  #
+##########################################################################
+  ApiCdnCachePolicy:
+    Condition: DeployCloudFront
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Comment: !Sub 'Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) cache policy (maintained by AppConfig validator)'
+        DefaultTTL: 10  # Managed by SyncCacheSettingsFunction when config is deployed
+        MaxTTL: 3600  # Managed by SyncCacheSettingsFunction when config is deployed
+        MinTTL: 2  # Managed by the SyncCacheSettingsFunction when config is deployed
+        Name: !Sub 'PersonalizationAPIs-${AWS::StackName}'
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingBrotli: 'true'
+          EnableAcceptEncodingGzip: 'true'
+          CookiesConfig:
+            CookieBehavior: none
+          HeadersConfig:  # Managed by the SyncCacheSettingsFunction when config is deployed
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: all
+
+  ApiCdnOriginRequestPolicy:
+    Condition: DeployCloudFront
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: !Sub 'PersonalizationAPIs-${AWS::StackName}'
+        Comment: !Sub 'Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) origin request policy (maintained by AppConfig validator)'
+        CookiesConfig:
+          CookieBehavior: none
+        HeadersConfig: # Managed by the SyncCacheSettingsFunction when config is deployed
+          HeaderBehavior: none
+        QueryStringsConfig:
+          QueryStringBehavior: all
+
+  ApiCdn:
+    Condition: DeployCloudFront
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub 'Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) CDN for ${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+        PriceClass: PriceClass_200
+        HttpVersion: http2
+        Origins:
+          - DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+            Id: APIGW
+            OriginPath: !Sub '/${EnvironmentName}'
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1.2
+        DefaultCacheBehavior:
+          TargetOriginId: APIGW
+          ViewerProtocolPolicy: https-only
+          Compress: 'true'
+          CachePolicyId: !Ref ApiCdnCachePolicy
+          OriginRequestPolicyId: !Ref ApiCdnOriginRequestPolicy
+          ResponseHeadersPolicyId: '5cc3b908-e619-4b99-88e5-2cf7f45965bd' # CORS-With-Preflight
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          CachedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+
+##########################################################################
+#  AppConfig Resources                                                   #
+##########################################################################
+  AppConfigApplication:
+    Type: AWS::AppConfig::Application
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Ref ApplicationName
+
+  AppConfigEnvironment:
+    Type: AWS::AppConfig::Environment
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: !Ref EnvironmentName
+      ApplicationId:
+        Ref: AppConfigApplication
+
+  AppConfigConfigurationProfile:
+    Type: AWS::AppConfig::ConfigurationProfile
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Name: Personalization-API-Config
+      ApplicationId: !Ref AppConfigApplication
+      LocationUri: "hosted"
+      Validators:
+        - Type: LAMBDA
+          Content: !GetAtt ConfigValidatorFunction.Arn
+
+  AppConfigHostedConfigurationVersion:
+    Type: AWS::AppConfig::HostedConfigurationVersion
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApplicationId: !Ref AppConfigApplication
+      ConfigurationProfileId: !Ref AppConfigConfigurationProfile
+      Content: '{"description": "Empty configuration.", "namespaces": []}' # Seed with empty config
+      ContentType: application/json
+
+  AppConfigDeployment:
+    Type: AWS::AppConfig::Deployment
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ApplicationId: !Ref AppConfigApplication
+      ConfigurationProfileId: !Ref AppConfigConfigurationProfile
+      ConfigurationVersion: !Ref AppConfigHostedConfigurationVersion
+      DeploymentStrategyId: !Ref DeploymentStrategy
+      EnvironmentId: !Ref AppConfigEnvironment
+
+  DeploymentStrategy:
+    Type: AWS::AppConfig::DeploymentStrategy
+    Properties:
+      Name: AllAtOnceNoBake
+      DeploymentDurationInMinutes: 0
+      FinalBakeTimeInMinutes: 0
+      GrowthFactor: 100
+      GrowthType: LINEAR
+      ReplicateTo: NONE
+
+##########################################################################
+#  Outputs                                                               #
+##########################################################################
+Outputs:
+  PersonalizationRestApiFunction:
+    Condition: DeployApiGatewayRest
+    Description: "Personalization API function ARN (API GW REST)"
+    Value: !GetAtt PersonalizationRestApiFunction.Arn
+
+  PersonalizationHttpApiFunction:
+    Condition: DeployApiGatewayHttp
+    Description: "Personalization API function ARN (API GW HTTP)"
+    Value: !GetAtt PersonalizationHttpApiFunction.Arn
+
+  PersonalizationApiExecutionRole:
+    Description: "IAM Role ARN for executing the personalization API function"
+    Value: !GetAtt PersonalizationApiExecutionRole.Arn
+
+  RestApiEndpointUrl:
+    Condition: DeployApiGatewayRest
+    Description: "API Gateway endpoint URL for Prod stage for Personalization API function"
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/"
+
+  RestApiKey:
+    Condition: DeployApiKey
+    Description: "API Gateway REST API key"
+    Value: !Ref ApiKey
+
+  HttpApiEndpointUrl:
+    Condition: DeployApiGatewayHttp
+    Description: "API Gateway endpoint URL for Prod stage for Personalization API function"
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/"
+
+  CognitoUserPoolId:
+    Condition: DeployCognito
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+
+  CognitoUserPoolClientId:
+    Condition: DeployCognito
+    Description: Cognito User Pool Client ID
+    Value: !Ref CognitoUserPoolClient
+
+  ApiCdnDistributionId:
+    Condition: DeployCloudFront
+    Description: CloudFront distribution ID for personalization API CDN
+    Value: !Ref ApiCdn
+
+  ApiCdnUrl:
+    Condition: DeployCloudFront
+    Description: URL for the personalization API's CDN
+    Value: !Sub
+      - 'https://${Domain}'
+      - Domain: !GetAtt ApiCdn.DomainName
+
+  ItemMetadataBucket:
+    Description: S3 bucket used to stage bulk item metadata updates
+    Value: !Ref ItemMetadataBucket
+
+  AppConfigApplication:
+    Description: AWS AppConfig application ID
+    Value: !Ref AppConfigApplication
+
+  AppConfigEnvironment:
+    Description: AWS AppConfig application environment ID
+    Value: !Ref AppConfigEnvironment
+
+  AppConfigConfigurationProfile:
+    Description: AWS AppConfig configuration profile ID
+    Value: !Ref AppConfigConfigurationProfile
+
+  ConfigResourceSyncStateMachine:
+    Description: Application configuration to resource synchronization AWS Step Function state machine
+    Value: !Ref ConfigResourceSyncStateMachine

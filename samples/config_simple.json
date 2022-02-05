@@ -1,0 +1,66 @@
+{
+    "version": "1",
+    "cacheControl": {
+        "autoProvision": true,
+        "userSpecified": {
+            "maxAge": 10,
+            "directives": "private"
+        },
+        "syntheticUserSpecified": {
+            "maxAge": 300,
+            "directives": "public"
+        },
+        "noUserSpecified": {
+            "maxAge": 1200,
+            "directives": "public"
+        }
+    },
+    "namespaces": {
+        "my-store": {
+            "inferenceItemMetadata": {
+                "type": "localdb"
+            },
+            "recommenders": {
+                "recommend-items": {
+                    "recommended-for-you": {
+                        "variations": {
+                            "user-personalization": {
+                                "type": "personalize-campaign",
+                                "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:campaign/[CAMPAIGN_NAME]",
+                                "filters": [{
+                                    "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:filter/[FILTER_NAME]"
+                                }]
+                            }
+                        }
+                    }
+                },
+                "related-items": {
+                    "similar": {
+                        "variations": {
+                            "sims": {
+                                "type": "personalize-campaign",
+                                "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:campaign/[CAMPAIGN_NAME]"
+                            }
+                        }
+                    }
+                },
+                "rerank-items": {
+                    "personalized-ranking": {
+                        "variations": {
+                            "sims": {
+                                "type": "personalize-campaign",
+                                "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:campaign/[CAMPAIGN_NAME]"
+                            }
+                        }
+                    }
+                }
+            },
+            "eventTargets": [
+                {
+                    "type": "personalize-event-tracker",
+                    "trackingId": "[TRACKING_ID]"
+                }
+            ]
+        }
+    }
+}

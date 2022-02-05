@@ -1,0 +1,38 @@
+{
+    "version": "1",
+    "namespaces": {
+        "my-store": {
+            "inferenceItemMetadata": {
+                "type": "localdb"
+            },
+            "recommenders": {
+                "related-items": {
+                    "similar": {
+                        "experiments": {
+                            "product-detail-view": {
+                                "method": "evidently",
+                                "project": "my-store",
+                                "metrics": {
+                                    "productDetailRecClicked": {
+                                        "entityIdKey": "userDetails.userId",
+                                        "valueKey": "details.productClicked"
+                                    }
+                                }
+                            }
+                        },
+                        "variations": {
+                            "sims": {
+                                "type": "personalize-campaign",
+                                "arn": "arn:aws:personalize:[REGION:[ACCOUNT]:campaign/[CAMPAIGN_NAME]"
+                            },
+                            "similar-items": {
+                                "type": "personalize-campaign",
+                                "arn": "arn:aws:personalize:[REGION:[ACCOUNT]:campaign/[CAMPAIGN_NAME]"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  (P13N-RT-APIS-EDGE) - Lambda@Edge functions and related resources for the Personalization APIs solution. Since all Lambda@Edge
+  functions must be deployed into the us-east-1 region, these resources are packaged separately here so that the primary Personalization
+  APIs resources can be deployed in a separate region. This stack is only necessary if OAuth2 at the edge is being used.
+
+Parameters:
+  CognitoRegion:
+    Type: String
+    Description: AWS region name where your Cognito user pool is deployed.
+    AllowedPattern: ^[a-z]{2}-((?:gov|iso|isob)-)?[a-z]+-\d{1}?$
+    Default: 'us-east-1'
+
+  CognitoUserPoolId:
+    Type: String
+    Description: Amazon Cognito user pool ID for the user pool used to generated JWT tokens for your application.
+    AllowedPattern: ^[\w-]+$
+
+Globals:
+  Function:
+    Tags:
+      CreatedBy: Personalization-APIs-Solution
+
+Resources:
+  EdgeAuthFunction:
+    Type: AWS::Serverless::Function
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Description: Edge function that verifies JWT tokens in CloudFront to maximize caching and reduce latency
+      Runtime: nodejs14.x
+      Timeout: 3
+      CodeUri: src/edge_auth_function
+      Handler: index.handler
+      MemorySize: 128 # Restricted by L@E
+      Role: !GetAtt EdgeAuthExecutionRole.Arn
+      AutoPublishAlias: Templated
+
+  EdgeAuthExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - edgelambda.amazonaws.com
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: '/'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  UpdateEdgeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/edge_update_function
+      Handler: main.lambda_handler
+      Runtime: python3.9
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - lambda:GetFunction
+              - lambda:UpdateFunctionCode
+            Resource: !GetAtt EdgeAuthFunction.Arn
+
+  UpdateEdgeFunctionCustom:
+    Type: Custom::UpdateConfigCustom
+    Properties:
+      ServiceToken: !GetAtt UpdateEdgeFunction.Arn
+      UserPoolId: !Ref CognitoUserPoolId
+      CognitoRegion: !Ref CognitoRegion
+      EdgeFunctionArn: !GetAtt EdgeAuthFunction.Arn
+
+##########################################################################
+#  Outputs                                                               #
+##########################################################################
+Outputs:
+  EdgeAuthFunction:
+    Description: "Edge authentication function ARN"
+    Value: !GetAtt EdgeAuthFunction.Arn
+
+  EdgeAuthFunctionAlias:
+    Description: Alias for templated version of the Function
+    Value: !Ref EdgeAuthFunction.Alias
+
+  UpdateEdgeFunction:
+    Description: "Edge function update function ARN"
+    Value: !GetAtt UpdateEdgeFunction.Arn

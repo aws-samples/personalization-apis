@@ -1,0 +1,8 @@
+__pycache__/
+.DS_Store
+.vscode
+.aws-sam
+.venv
+**/jj_*
+items.csv
+users.csv

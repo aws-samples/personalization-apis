@@ -1,0 +1,5 @@
+# Runtime requirements:
+# Note: the following dependency must be provided at runtime as Lambda layer:
+#   - AWS Lambda Power Tools as a Lambda layer.
+# Note: If the PersonalizationConfig class is going to be used, the following Lambda extension must also be configured for the function:
+#   - AWS AppConfig Lambda extension (https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-integration-lambda-extensions.html)

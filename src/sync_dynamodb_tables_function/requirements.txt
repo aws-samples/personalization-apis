@@ -1,0 +1,1 @@
+# Note: AWS Lambda Power Tools is required but is satisfied by a Lambda layer at runtime.

@@ -1,0 +1,2 @@
+ignore_checks:
+  - W3005 # Disable rule W3005 - obsolete DependsOn (needed for API stage timing)
