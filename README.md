@@ -162,4 +162,4 @@ If you encounter a bug, please create a new issue with as much detail as possibl
 
 ## License summary
 
-This sample code is made available under a Apache 2.0 license. See the LICENSE file.
+This sample code is made available under a MIT-0 license. See the LICENSE file.
