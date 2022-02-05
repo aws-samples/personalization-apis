@@ -4,13 +4,13 @@ Caching API responses provides key benefits such as greatly reduced response tim
 
 The Personalization APIs solution provides the ability to deploy caching at multiple layers:
 
-- Device cache (private): Caching layer on the user's physical device (i.e., laptop, tablet, phone, etc). Provides the lowest possible latency and most responsive user experience since cached responses are served directly from the user's device.
+- **Device cache** (private): Caching layer on the user's physical device (i.e., laptop, tablet, phone, etc). Provides the lowest possible latency and most responsive user experience since cached responses are served directly from the user's device.
     - Network latency: _eliminated!_
     - Origin latency: _eliminated!_
-- Edge caches (shared): Distributed caching layer deployed through a CDN (CloudFront) that caches responses geographically near end users. Provides the next lowest latency since round-trip requests to edge caches are as short as possible. Edge caches are particularly effective when the user base is geographically distributed across multiple regions or not close to the origin recommender's region.
+- **Edge caches** (shared): Distributed caching layer deployed through a CDN (CloudFront) that caches responses geographically near end users. Provides the next lowest latency since round-trip requests to edge caches are as short as possible. Edge caches are particularly effective when the user base is geographically distributed across multiple regions or not close to the origin recommender's region.
     - Network latency: optimized
     - Origin latency: _eliminated!_
-- Gateway cache (shared): Centralized caching layer co-located with the origin recommender. Reduces latency by the amount of time that it would take the origin recommender to generate a response but does not eliminate network latency significantly.
+- **Gateway cache** (shared): Centralized caching layer co-located with the origin recommender. Reduces latency by the amount of time that it would take the origin recommender to generate a response but does not eliminate network latency significantly.
     - Network latency: negligible improvement
     - Origin latency: _eliminated!_
 

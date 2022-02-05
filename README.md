@@ -18,11 +18,11 @@ Although the project is tightly integrated with [Amazon Personalize](https://aws
 
 Depending on the deployment configuration selected, caching is automatically enabled at multiple points in the request path.
 
-- [Amazon CloudFront](https://aws.amazon.com/cloudfront/) is deployed as a CDN (content delivery network) in front of the APIs to provided a distributed shared cache and to reduce overall network latency.
+- [Amazon CloudFront](https://aws.amazon.com/cloudfront/) is deployed as a CDN (content delivery network) in front of the APIs to provide a distributed shared cache and to reduce overall network latency.
 - Control the maximum age that responses are cached at the individual recommender and request levels.
 - Control whether responses can be cached in shared (CloudFront or API Gateway) and/or private (browser) caches.
 - Configuration inheritance: set a single cache policy that applies to all recommenders with the option to override cache policies at the namespace and recommender levels.
-- Automatic support for HTTP cache validation through ETag response headers and If-None-Match request header inspection.
+- Automatic support for HTTP cache validation through `ETag` response headers and `If-None-Match` request header inspection.
 - **The result is reduced latency and fewer calls to your origin recommenders.**
 
 See the [Caching](./docs/caching.md) documentation for details.
@@ -49,7 +49,7 @@ See the [Automatic context](./docs/auto_context.md) and [Configuration](./docs/c
 
 Deploying a recommender system is rarely a one-and-done project. It's an iterative process. Comparing the effectiveness of one recommender against another and how they impact business objectives requires online testing. The most common online testing strategy is A/B testing where separate groups of end-users are presented different variations of recommendations and their behavior is measured to determine which variation produces the best results.
 
-The Personalization APIs solution is integrated with [Amazon CloudWatch Evidently](https://aws.amazon.com/blogs/aws/cloudwatch-evidently/), a new capability of CloudWatch that allows you to manage, deploy, and monitor A/B tests in your applications, and allows you easily run your own A/B tests across different recommender implementations.
+The Personalization APIs solution is integrated with [Amazon CloudWatch Evidently](https://aws.amazon.com/blogs/aws/cloudwatch-evidently/), a new capability of CloudWatch that allows you to manage, deploy, and monitor A/B tests in your applications, and allows you to easily run your own A/B tests across different recommender implementations.
 
 See the [Experimentation](./docs/experimentation.md) documentation for details.
 
@@ -66,7 +66,7 @@ See the [Configuration](./docs/configuration.md) documentation for details.
 ### Step 1: Clone the solution respository
 
 ```bash
-git clone [UPDATE_WITH_FINAL_REPO]
+git clone git@github.com:aws-samples/personalization-apis.git
 ```
 
 ### Step 2: Install the solution
@@ -151,10 +151,6 @@ aws cloudformation delete-stack --stack-name personalization-apis
 ```
 
 Alternatively, you can delete the stack in the AWS console on the CloudFormation page.
-
-## FAQs
-
-TODO
 
 ## Reporting issues
 
