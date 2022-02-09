@@ -976,7 +976,7 @@ Resources:
     Properties:
       ApplicationId: !Ref AppConfigApplication
       ConfigurationProfileId: !Ref AppConfigConfigurationProfile
-      Content: '{"description": "Empty configuration.", "namespaces": []}' # Seed with empty config
+      Content: '{"description": "Empty configuration.", "namespaces": {}}' # Seed with empty config
       ContentType: application/json
 
   AppConfigDeployment:
