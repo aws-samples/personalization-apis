@@ -1,0 +1,3 @@
+# Load item metadata function
+
+This AWS Lambda function is invoked when you upload [item metadata files](../../docs/item_metadata.md) to the Amazon S3 item metadata staging bucket. It will parse the contents of the uploaded item metadata file and either write the metadata to a DynamoDB table or prepare a DBM file containing the metadata and write that file back to the same S3 bucket. The prepared DBM files for each namespace are downloaded by the [personalization_api_function](../personalization_api_function/) and saved locally on the Lambda instance volume.

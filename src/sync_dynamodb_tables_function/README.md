@@ -1,0 +1,3 @@
+# Synchronize DynamoDB table resources function
+
+This AWS Lambda function is called via the [sync_resources.asl.json](../statemachine/sync_resources.asl.json) AWS Step Function state machine to synchronize DynamoDB table resources based on the item metadata settings in your [configuration](../../docs/configuration.md). For example, it will automatically create and update DynamoDB table settings to match your configuration. This function does not load data into DynamoDB tables, though. That is done by the [load_item_metadata_function](../load_item_metadata_function/). The state machine is executed each time the configuration is deployed in AWS AppConfig.

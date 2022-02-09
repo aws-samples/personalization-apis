@@ -1,6 +1,6 @@
 # Personalization API entry points
 
-The API entry points have consistent and predictable paths based on your [configuration](./configuration.md). Since entry point paths are resolved dynamically for each request based on your configuration, an update to your configuration will be reflected in the API entry points after your configuration is deployed via AppConfig **and** the APIs reload their configuration (every 45 seconds, by default).
+The API entry points have consistent and predictable paths based on your [configuration](./configuration.md). Since entry point paths are resolved dynamically for each request based on your configuration, an update to your configuration will be reflected in the API entry points after your configuration is deployed via [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/) **and** the API functions reload their configuration (every 45 seconds, by default).
 
 ## Inference entry points
 
@@ -21,7 +21,7 @@ This entry point returns item recommendations for a specific user.
 #### Query string parameters (optional)
 
 - `numResults` (integer): How many items to return in the response. The minimum supported value is 1 and the maximum value depends on the underlying recommender. For a Personalize campaign/recommender, the maximum is 500. If this parameter is not specified, the default is 25.
-- `filter` (string): Amazon Personalize filter name or ARN to use in the [GetRecommendations](https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html) API call to the Personalize campaign/recommender for the configured recommender. This parameter overrides the filter associated with the recommender in the [configuration](./configuration.md).
+- `filter` (string): [Amazon Personalize filter](https://docs.aws.amazon.com/personalize/latest/dg/filter.html) name or ARN to use in the [GetRecommendations](https://docs.aws.amazon.com/personalize/latest/dg/API_RS_GetRecommendations.html) API call to the Personalize campaign/recommender for the configured recommender. This parameter overrides the filter associated with the recommender in the [configuration](./configuration.md).
 - `filterValues` (string map): When the `filter` parameter is specified and the expression for the filter has dynamic variable(s), this parameter can be used to specify the value(s) to use for those variables. This parameter value must be a string map (JSON) encoded as a string. See the Personalize [filter documentation](https://docs.aws.amazon.com/personalize/latest/dg/filter-real-time.html) for details and examples. This value is blended with the automatic filter rules associated with the recommender in the [configuration](./configuration.md).
 - `context` (string map): Provides context for contextual recommendations as a string map (JSON) encoded as a string. This value is blended with the [auto context](./auto_context.md) rules in the configuration.
 - `decorateItems` (boolean): Controls whether item IDs returned from the origin recommender are decorated with [item metadata](./item_metadata.md) in the response. The values `1`, `yes`, and `true` (case-insensitive) will be interpreted as `true`. Any other value will be interpreted as `false`. The default value is `true`. Since this parameter is included in the cache key for response caching, it is important to use consistent values across your client applications (to maximize cache hit rate).
@@ -30,7 +30,7 @@ This entry point returns item recommendations for a specific user.
 
 #### Examples
 
-The examples below assume the following simple configuration that includes one namespace (`my-store`) with one recommender for the `recommend-items` API action type (`recommended-for-you`) and one variation:
+The example below assume the following simple configuration that includes one namespace (`my-store`) with one recommender (`recommended-for-you`) for the `recommend-items` API action type and one variation:
 
 ```javascript
 {
@@ -163,7 +163,7 @@ The request Content-Type should be `application/json` and the body of the reques
 
 - `trackingId` is not required in the request body but is instead derived from the event targets specified in the Personalization APIs [configuration](./configuration.md). This allows you to fan-out events to multiple Personalize event trackers for different Personalize dataset groups, if necessary.
 - `eventList`: events to track for the `userId`:
-    - `eventList[].properties`: specifies interaction context fields and values (optional). If [automatic context](./auto_context.md) rules are configured, the Personalization APIs will automatically derive context from the request and build/blend the context values into the `properties` field value.
+    - `eventList[].properties`: specifies interaction context fields and values (optional). If [automatic context](./auto_context.md) rules are configured, the Personalization APIs will automatically derive context from the request and build/blend the context values into the `properties` field value before sending to configured event targets.
 - `experimentConversions` includes experiment conversions for the user (optional):
     - `experimentConversions[].recommender`: recommender path within the namespace for the experiment conversion (required).
     - `experimentConversions[].feature`: feature name for the experiment for the conversion (optional but recommended). If not specified, the first experiment for the recommender in the configuration will be used to log the conversion event. If you are running multiple experiments for the same recommender, you should specify the feature name when retrieving recommendations and logging conversion events.

@@ -35,7 +35,7 @@ See the [Item Metadata](./docs/item_metadata.md) documentation for details.
 
 ## Fan-out incremental/streamed events
 
-The Personalization API's `events` endpoint provides a distribution point to send events to any combination of Amazon Personalize event trackers, Amazon Kinesis Data Streams streams, and Amazon Kinesis Data Firehose delivery streams. Or you can have the API send events just to a Kinesis data stream and then configure your own consumers downstream from Kinesis. This allows you to persist clickstream data in datastores such as S3, OpenSearch, or Redshift and then build dashboards, perform deeper analysis, and more.
+The Personalization API's [/events](https://github.com/aws-samples/personalization-apis/blob/main/docs/api_entry_points.md#events) endpoint provides a distribution point to send events to any combination of Amazon Personalize event trackers, Amazon Kinesis Data Streams streams, and Amazon Kinesis Data Firehose delivery streams. Or you can have the API send events just to a Kinesis data stream and then configure your own consumers downstream from Kinesis. This allows you to persist clickstream data in datastores such as S3, OpenSearch, or Redshift and then build dashboards, perform deeper analysis, and more.
 
 See the [API entry points](./docs/api_entry_points.md) and [Configuration](./docs/configuration.md) documentation for details.
 
@@ -99,6 +99,31 @@ The `sam build --use-container --cached` command will build and package the sour
 
 > Note: the following steps assume you already have one or more recommenders created and deployed in the same AWS account and region where this solution was deployed.
 
+#### Deployment template parameters
+
+|Parameter name	|Type	|Valid values	|Default	|Description	|
+|---	|---	|---	|---	|---	|
+|ApplicationName | String | Alphanumeric | | Application name used to name AppConfig application. |
+|EnvironmentName | String | Alphanumeric | 'prod' | Application environment name (such as "dev", "staging", "prod", etc). Used for set the stage in API Gateway and to organize application configuration resources in AppConfig. |
+|TimeZone | String | Time zone name | 'UTC' | Initialize the solution's time zone to match your default local time zone. This is used as the default time zone if the user's time zone is not available when determining time-based automatic context. |
+|AuthenticationScheme | String | 'OAuth2-Cognito', 'ApiKey', or 'None' | 'OAuth2-Cognito' | Desired authentication scheme to protect API access. Note that "ApiKey" requires "API-Gateway-REST" for the API entry point type. If you select "OAuth2-Cognito", be sure to deploy the edge authentication template as well (must be done separately). |
+|CreateCognitoResources | String | 'Yes' or 'No' | 'Yes' | Create Amazon Cognito user pool and client that can be used to create OAuth2 tokens for API authentication. Only applicable when the authentication scheme is "OAuth2-Cognito". If you have an existing Cognito user pool, select "No".|
+|ApiEntryPointType | String | 'API-Gateway-HTTP' or 'API-Gateway-REST' | 'API-Gateway-HTTP' | API entry point type for requests that access the personalization APIs. "API-Gateway-REST" is recommended when the authentication scheme is "None" or "OAuth2-Cognito" for the best performance and lowest cost. |
+|CacheScheme | String | 'CloudFront', 'API-Gateway-Cache', 'Both', 'None' | 'CloudFront' | Caching scheme to deploy with the API entry point type. Note that using "API-Gateway-REST" for the API entry point type includes a CloudFront distribution that is transparently managed by API Gateway. However, this distribution does not include caching so you should select "API-Gateway-Cache" with "API-Gatewa-REST".||
+
+#### Deployment combinations
+
+The following table lays out the different deployment combinations with the recommended combination for each authentication type in **bold**.
+
+|Auth scheme	|Entry point type	|Cache scheme	|Notes	|
+|---	|---	|---	|---	|
+|None	|API-Gateway-REST	|API-Gateway-Cache	||
+|	|**API-Gateway-HTTP**	|**CloudFront**	| Lower latency, lower cost, ideal for distributed user base. |
+|ApiKey	|**API-Gateway-REST**	|**API-Gateway-Cache**	| Only valid combination option for ApiKey auth scheme.|
+|	|API-Gateway-HTTP	|N/A	|Not viable - APIGW HTTP does not support API Keys	|
+|OAuth2-Cognito	|API-Gateway-REST	|API-Gateway-Cache	|JWT validation must be done in API Gateway	with API-Gateway-REST (edge optimized) |
+|	|**API-Gateway-HTTP**	|**CloudFront**	|JWT validation using L@E function. Preferred due to more distributed caches, lower latency, and lower cost. |
+
 ### Step 3: Configure the solution
 
 The solution retrieves configuration details from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). When the solution is initally deployed, a skeleton configuration is created in AppConfig. Before the solution can serve responses from your recommenders, you must first update the skeleton configuration to match your recommender deployments. See the [configuration documentation](./docs/configuration.md) for details.
@@ -141,6 +166,7 @@ You can further customize the base API configuration as follows:
 - Add your own domain name and SSL certificate to the CloudFront distribution or API Gateway endpoint (**only if you deployed with the `API-Gateway-REST` API entry point type**).
 - Update the base CORS configuration to only allow requests from the origins of your client applications.
 - If you deployed with a configuration that includes CloudFront, you can protect the origin API endpoint (API Gateway) using AWS WAF that will prevent clients from calling API Gateway directly. Details [here](https://www.wellarchitectedlabs.com/security/300_labs/300_multilayered_api_security_with_cognito_and_waf/3_prevent_requests_from_accessing_api_directly/).
+- Setup [Provisioned Concurrency](https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html) for the [personalization_api_function](./src/personalization_api_function/). The ARN for this function can be found in the CloudFormation output parameters (either `PersonalizationHttpApiFunction` or `PersonalizationRestApiFunction` depending on your deployment options).
 
 ## Uninstalling the solution
 
