@@ -93,6 +93,7 @@ This entry point returns related/similar item recommendations for a specific ite
 The following entry points rerank/reorder a list of items in order of predicted interest for a specific user. There are two variations of this action using different HTTP action verbs.
 
 `GET /rerank-items/{namespace}/{recommender}/{user_id}/{item_ids}` (_recommended_)
+
 `POST /rerank-items/{namespace}/{recommender}/{user_id}`
 
 The `{item_ids}` path parameter must be a comma-delimited list of item IDs to rerank. For example, `item_1,item_2,item_3`. If your item IDs can include the comma character, you cannot use the `GET` variation and must use the `POST` variation instead.

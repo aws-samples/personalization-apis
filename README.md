@@ -126,7 +126,7 @@ The following table lays out the different deployment combinations with the reco
 
 ### Step 3: Configure the solution
 
-The solution retrieves configuration details from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). When the solution is initally deployed, a skeleton configuration is created in AppConfig. Before the solution can serve responses from your recommenders, you must first update the skeleton configuration to match your recommender deployments. See the [configuration documentation](./docs/configuration.md) for details. The [samples](./samples) folder provides some minimal configurations that can help get your started.
+The solution retrieves configuration details from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). When the solution is initally deployed, a skeleton configuration is created in AppConfig. Before the solution can serve responses from your recommenders, you must first update the skeleton configuration to match your recommender deployments. See the [configuration documentation](./docs/configuration.md) for details. The [samples](./samples) folder provides some minimal configurations that can help get you started.
 
 ### Step 4: Preparing and uploading your item metadata to S3
 

@@ -96,7 +96,7 @@ def resolve_auto_values(context_config: Dict, headers: Dict[str,str]) -> Dict[st
 def _resolve(rule: Dict, value: Any):
     resolved_value = None
 
-    if value:
+    if value is not None:
         if rule.get('valueMappings'):
             for value_mapping in rule.get('valueMappings'):
                 operator = value_mapping['operator']
@@ -115,6 +115,9 @@ def _resolve(rule: Dict, value: Any):
                     resolved_value = map_to
                 elif operator == 'ends-with' and str(value).endswith(str(mapping_value)):
                     resolved_value = map_to
+
+                if resolved_value:
+                    break
         else:
             resolved_value = value
 
