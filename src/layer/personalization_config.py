@@ -52,10 +52,10 @@ class PersonalizationConfig(ABC):
         return self.get_config().get('version', default)
 
     def inherit_config(self, parent: Dict, config: Dict) -> Dict:
-        if parent and config:
+        if parent is not None and config is not None:
             inherited = ['autoContext', 'filters', 'cacheControl', 'inferenceItemMetadata']
             for inherit in inherited:
-                if not config.get(inherit) and parent.get(inherit):
+                if config.get(inherit) is None and parent.get(inherit) is not None:
                     config[inherit] = copy.copy(parent.get(inherit))
 
         return config
