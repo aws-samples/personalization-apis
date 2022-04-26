@@ -66,6 +66,14 @@ Parameters:
       - 'None'
     Default: 'CloudFront'
 
+  GenerateConfigDatasetGroupNames:
+    Type: String
+    Description: >
+      Comma separated list of Amazon Personalize dataset group names for which to generate an API configuration or 'all'
+      to generate a configuration for all dataset groups in the current region. Leave this value blank to skip generating an API
+      configuration.
+    Default: ''
+
 Conditions:
   DeployApiGatewayHttp: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-HTTP' ]
   DeployApiGatewayRest: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-REST' ]
@@ -280,7 +288,7 @@ Resources:
       MemorySize: 1024
       Layers:
         - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17'
         - !Ref CommonLayer
       Environment:
         Variables:
@@ -338,7 +346,7 @@ Resources:
       MemorySize: 1024
       Layers:
         - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
         - !Ref CommonLayer
       Environment:
         Variables:
@@ -630,7 +638,7 @@ Resources:
       MemorySize: 1024
       Layers:
         - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
         - !Ref CommonLayer
       Policies:
         - Statement:
@@ -680,7 +688,7 @@ Resources:
       Handler: main.lambda_handler
       MemorySize: 256
       Layers:
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
       Policies:
         - Statement:
           - Sid: EventBridgePolicy
@@ -775,7 +783,7 @@ Resources:
       Handler: main.lambda_handler
       MemorySize: 256
       Layers:
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
       Role: !GetAtt SyncCacheSettingsExecutionRole.Arn
       Environment:
         Variables:
@@ -847,7 +855,7 @@ Resources:
       Handler: main.lambda_handler
       MemorySize: 256
       Layers:
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:6
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
       Policies:
         - Statement:
           - Effect: Allow
@@ -943,15 +951,11 @@ Resources:
 ##########################################################################
   AppConfigApplication:
     Type: AWS::AppConfig::Application
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       Name: !Ref ApplicationName
 
   AppConfigEnvironment:
     Type: AWS::AppConfig::Environment
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       Name: !Ref EnvironmentName
       ApplicationId:
@@ -959,8 +963,6 @@ Resources:
 
   AppConfigConfigurationProfile:
     Type: AWS::AppConfig::ConfigurationProfile
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       Name: Personalization-API-Config
       ApplicationId: !Ref AppConfigApplication
@@ -971,8 +973,6 @@ Resources:
 
   AppConfigHostedConfigurationVersion:
     Type: AWS::AppConfig::HostedConfigurationVersion
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       ApplicationId: !Ref AppConfigApplication
       ConfigurationProfileId: !Ref AppConfigConfigurationProfile
@@ -981,8 +981,6 @@ Resources:
 
   AppConfigDeployment:
     Type: AWS::AppConfig::Deployment
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
       ApplicationId: !Ref AppConfigApplication
       ConfigurationProfileId: !Ref AppConfigConfigurationProfile
@@ -999,6 +997,52 @@ Resources:
       GrowthFactor: 100
       GrowthType: LINEAR
       ReplicateTo: NONE
+
+  GenerateConfigFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Builds personalization APIs configuration based on CSV list of dataset group names
+      Timeout: 30
+      CodeUri: src/generate_config_function
+      Handler: main.lambda_handler
+      Layers:
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - personalize:DescribeCampaign
+              - personalize:DescribeEventTracker
+              - personalize:DescribeSolutionVersion
+              - personalize:ListCampaigns
+              - personalize:ListDatasetGroups
+              - personalize:ListEventTrackers
+              - personalize:ListRecommenders
+            Resource:
+              - '*'
+          - Effect: Allow
+            Action:
+              - appconfig:CreateHostedConfigurationVersion
+              - appconfig:StartDeployment
+              - appconfig:TagResource
+              - appconfig:ListHostedConfigurationVersions
+              - appconfig:DeleteHostedConfigurationVersion
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:appconfig:${AWS::Region}:${AWS::AccountId}:application/${AppConfigApplication}'
+              - !Sub 'arn:${AWS::Partition}:appconfig:${AWS::Region}:${AWS::AccountId}:application/${AppConfigApplication}/*'
+              - !Sub 'arn:${AWS::Partition}:appconfig:${AWS::Region}:${AWS::AccountId}:deploymentstrategy/${DeploymentStrategy}'
+      Environment:
+        Variables:
+          AppConfigApplicationId: !Ref AppConfigApplication
+          AppConfigEnvironmentId: !Ref AppConfigEnvironment
+          AppConfigDeploymentStrategyId: !Ref DeploymentStrategy
+          AppConfigConfigurationProfileId: !Ref AppConfigConfigurationProfile
+
+  CustomGenerateConfig:
+    Type: Custom::GenerateConfig
+    Properties:
+      ServiceToken: !GetAtt GenerateConfigFunction.Arn
+      DatasetGroupNames: !Ref GenerateConfigDatasetGroupNames
 
 ##########################################################################
 #  Outputs                                                               #
@@ -1074,3 +1118,7 @@ Outputs:
   ConfigResourceSyncStateMachine:
     Description: Application configuration to resource synchronization AWS Step Function state machine
     Value: !Ref ConfigResourceSyncStateMachine
+
+  GenerateConfigFunction:
+    Description: Personalization APIs configuration generator Lambda function ARN
+    Value: !GetAtt GenerateConfigFunction.Arn

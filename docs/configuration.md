@@ -2,6 +2,8 @@
 
 The Personalization APIs solution operates based on a configuration stored in [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). The configuration is specified in a hosted JSON profile in AppConfig and includes all of the settings that control the APIs. Within the configuration you can setup one or more namespaces (analagous to an application, a Personalize domain, or a Personalize custom dataset group).
 
+At deployment time, you can have the project automatically generate a configuration based the recommenders, campaigns, and event trackers in one or more Amazon Personalize dataset groups in your AWS environment. This is a great way to save a lot of time setting up the foundation of your configuration. You can then take this base configuration and customize it further to suit your needs.
+
 ## Primary concepts
 
 - **Configuration** - there is a single configuration definition that is represented in JSON and stored as a hosted configuration profile in AWS AppConfig. A configuration skeleton is automatically created by the Personalization APIs solution deployment that you can quickly update to match your environment.

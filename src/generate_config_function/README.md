@@ -1,0 +1,3 @@
+# Generate APIs configuration function
+
+This AWS Lambda function is invoked when you deploy the project and when it is deleted from your account. When the project is deployed, this function will automatically create a personalization APIs configuration in AWS AppConfig based on the Amazon Personalize recommenders, campaigns, and event trackers in the dataset groups that you specify. When this project is deleted from your AWS account, this function is also called to delete the hosted configurations in AppConfig. This is necessary so that all AppConfig dependent resources used in the project can be cleanly deleted.
