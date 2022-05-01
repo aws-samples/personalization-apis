@@ -8,7 +8,7 @@
         "description": "Learn more about Personalization APIs",
         "url": "https://github.com/aws-samples/personalization-apis"
     },
-    "servers": {},
+    "servers": [],
     "security": [],
     "tags": {},
     "paths": {},

@@ -41,9 +41,9 @@ class OpenApiGenerator:
         if "version" in apis_config:
             openapi["info"]["version"] = apis_config["version"]
 
-        openapi["servers"] = [ { "url": apigw_host } ]
         if cloudfront_host:
             openapi["servers"].append({ "url": cloudfront_host })
+        openapi["servers"].append({ "url": apigw_host })
 
         if auth_scheme == AUTH_SCHEME_API_KEY:
             openapi["security"] = [ { "ApiKeyAuth": [] } ]
