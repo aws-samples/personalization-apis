@@ -17,6 +17,7 @@
     },
     "namespaces": {
         "my-store": {
+            "name": "My Store",
             "inferenceItemMetadata": {
                 "type": "localdb"
             },

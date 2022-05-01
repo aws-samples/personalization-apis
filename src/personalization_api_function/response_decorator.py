@@ -52,7 +52,7 @@ class ResponseDecorator(ABC):
         start = time.time()
 
         if start - ResponseDecorator._last_prepare > PREPARE_FREQUENCY:
-            bucket = os.environ['ItemMetadataBucket']
+            bucket = os.environ['StagingBucket']
 
             prepared_count = 0
 
@@ -131,7 +131,6 @@ class ResponseDecorator(ABC):
         except ClientError as e:
             if e.response['Error']['Code'] == 'AccessDenied':
                 logger.error('Staged localdb file s3://%s/%s either does not exist or access has been revoked', bucket, key)
-                pass
             else:
                 raise e
 

@@ -7,12 +7,21 @@ import jsonschema
 import os
 import base64
 
-from typing import List, Set
+from typing import List
 from aws_lambda_powertools import Logger, Tracer
+from openapi import OpenApiGenerator
 
 tracer = Tracer()
 logger = Logger()
 
+staging_bucket = os.environ['StagingBucket']
+openapi_output_key = 'openapi/openapi.json'
+
+apigw_host = os.environ['ApiGatewayHost']
+cloudfront_host = os.environ['CloudFrontHost']
+api_auth_scheme = os.environ['AuthenticationScheme']
+
+s3 = boto3.resource('s3')
 event_bridge = boto3.client('events')
 
 '''
@@ -53,10 +62,28 @@ def lambda_handler(event, _):
     if errors:
         raise ValueError('; '.join(errors))
 
-    # Step 3: post an event to EventBridge to trigger the resource synchronization step functions state machine.
+    # Step 3: generate an updated OpenAPI spec file and save to the staging bucket.
+    openapi_generator = OpenApiGenerator()
+    openapi_spec = openapi_generator.generate(
+        apis_config = personalization_config,
+        apigw_host = apigw_host,
+        cloudfront_host = cloudfront_host,
+        auth_scheme = api_auth_scheme
+    )
+
+    openapi_uri = None
+    if 'paths' in openapi_spec and len(openapi_spec['paths']) > 0:
+        object = s3.Object(staging_bucket, openapi_output_key)
+        result = object.put(Body=json.dumps(openapi_spec, indent = 4))
+        logger.debug(result)
+        openapi_uri = f's3://{staging_bucket}/{openapi_output_key}'
+
+    # Step 4: post an event to EventBridge to trigger the resource synchronization step functions state machine.
 
     # Set the decoded config into event so that it's accessible as JSON in targets (i.e., step function state machine).
     event['content'] = personalization_config
+    if openapi_uri:
+        event['openApiSpecUri'] = openapi_uri
 
     region = os.environ['AWS_REGION']
     account_id = boto3.client('sts').get_caller_identity()['Account']

@@ -1,0 +1,421 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "Personalization APIs",
+        "description": "Auto-generated OpenAPI config for Personalization APIs"
+    },
+    "externalDocs": {
+        "description": "Learn more about Personalization APIs",
+        "url": "https://github.com/aws-samples/personalization-apis"
+    },
+    "servers": {},
+    "security": [],
+    "tags": {},
+    "paths": {},
+    "components": {
+        "parameters": {
+            "userIdPath": {
+                "name": "user_id",
+                "description": "Identifier of the user to retrieve recommendations.",
+                "in": "path",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                },
+                "examples": {
+                    "simpleNumericId": {
+                        "summary": "Simple numeric user ID",
+                        "value": "1234"
+                    },
+                    "uuidId": {
+                        "summary": "UUID user ID",
+                        "value": "5e68e734-af74-46a3-8822-81bbef02ccb7"
+                    }
+                }
+            },
+            "userIdQuery": {
+                "name": "userId",
+                "description": "User ID representing the user for this request. This parameter becomes required when a filter is specified using either the `filter` parameter or for the recommender in the configuration.",
+                "in": "query",
+                "required": false,
+                "schema": {
+                    "type": "string"
+                },
+                "examples": {
+                    "simpleNumericId": {
+                        "summary": "Simple numeric user ID",
+                        "value": "1234"
+                    },
+                    "uuidId": {
+                        "summary": "UUID user ID",
+                        "value": "5e68e734-af74-46a3-8822-81bbef02ccb7"
+                    }
+                }
+            },
+            "itemIdPath": {
+                "name": "item_id",
+                "description": "Identifier of the item to retrieve related item recommendations.",
+                "in": "path",
+                "required": true,
+                "schema": {
+                    "type": "string"
+                },
+                "examples": {
+                    "simpleNumericId": {
+                        "summary": "Simple numeric item ID",
+                        "value": "1234"
+                    },
+                    "uuidId": {
+                        "summary": "UUID item ID",
+                        "value": "5e68e734-af74-46a3-8822-81bbef02ccb7"
+                    }
+                }
+            },
+            "itemIdsPath": {
+                "name": "item_ids",
+                "description": "Item IDs formatted as a comma-delimited list.",
+                "in": "path",
+                "required": true,
+                "schema": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "simpleNumerId": {
+                        "summary": "Simple numeric item IDs",
+                        "value": [ "123", "456", "789" ]
+                    },
+                    "uuidId": {
+                        "summary": "UUID item IDs",
+                        "value": [ "5e68e734-af74-46a3-8822-81bbef02ccb7", "659c2b26-6a21-4d95-86c7-eefd2f147a7d", "1ce09a27-d1c8-4801-a6df-a6cc4bfe7304" ]
+                    }
+                }
+            },
+            "numResults": {
+                "name": "numResults",
+                "description": "The number of items to include in recommendations response.",
+                "in": "query",
+                "required": false,
+                "schema": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 500,
+                    "default": 25,
+                    "example": 10
+                }
+            },
+            "filter": {
+                "name": "filter",
+                "description": "Amazon Personalize filter name or ARN to use to filter recommendations. If specified, this value overrides the filter in the configuration for this recommender.",
+                "in": "query",
+                "required": false,
+                "schema": {
+                    "type": "string"
+                },
+                "examples": {
+                    "filterName": {
+                        "summary": "Filter name",
+                        "value": "FILTER_NAME"
+                    },
+                    "filterArn": {
+                        "summary": "Filter ARN",
+                        "value": "arn:aws:personalize:[REGION]:[ACCOUNT_ID]:filter/[FILTER_NAME]"
+                    }
+                }
+            },
+            "filterValues": {
+                "name": "filterValues",
+                "description": "When the `filter` parameter is specified and the expression for the filter has dynamic variable(s), this parameter can be used to specify the value(s) to use for those variables. This parameter value must be a string map (JSON) encoded as a string. See the Personalize filter documentation for details and examples. This value is blended with the automatic filter rules associated with the recommender in the configuration.",
+                "in": "query",
+                "required": false,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "context": {
+                "name": "context",
+                "description": "Provides context for contextual recommendations as a string map (JSON) encoded as a string. This value is blended with the auto context rules in the configuration.",
+                "in": "query",
+                "required": false,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "decorateItems": {
+                "name": "decorateItems",
+                "description": "Controls whether item IDs returned from the origin recommender are decorated with [item metadata](./item_metadata.md) in the response. The values `1`, `yes`, and `true` (case-insensitive) will be interpreted as `true`. Any other value will be interpreted as `false`. The default value is `true`. Since this parameter is included in the cache key for response caching, it is important to use consistent values across your client applications (to maximize cache hit rate).",
+                "in": "query",
+                "required": false,
+                "schema": {
+                    "type": "string",
+                    "enum": [ "0", "1" ],
+                    "example": "1",
+                    "default": "1"
+                }
+            },
+            "syntheticUser": {
+                "name": "syntheticUser",
+                "description": "Indicates whether the user specified in the request represents an individual user or a synthetic user representing one or more actual users. When combined with cache settings, this allows you to define a different cache policy for synthetic users. Since this parameter is included in the cache key for response caching, it is important to use consistent values across your client applications (to maximize cache hit rate).",
+                "in": "query",
+                "required": false,
+                "schema": {
+                    "type": "string",
+                    "enum": [ "0", "1" ],
+                    "example": "1",
+                    "default": "0"
+                }
+            },
+            "feature": {
+                "name": "feature",
+                "description": "UI component feature name (used to map to experiments for features)",
+                "in": "query",
+                "required": false,
+                "schema": {
+                    "type": "string"
+                },
+                "example": "recommended-for-you-widget"
+            }
+        },
+        "schemas": {
+            "RecommendationResponse": {
+                "type": "object",
+                "properties": {
+                    "itemList": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "itemId": {
+                                    "type": "string"
+                                },
+                                "score": {
+                                    "type": "number"
+                                },
+                                "metadata": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "description": "If item metadata is uploaded and associated with the Personalization APIs, this field will contain item metadata fields."
+                                }
+                            },
+                            "required": [
+                                "itemId"
+                            ]
+                        }
+                    },
+                    "recommendationId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "itemList"
+                ],
+                "example": {
+                    "itemList": [
+                        {
+                            "itemId": "2711c829-9f64-458e-be85-01365e5ea5e2",
+                            "score": 0.1278,
+                            "metadata": {
+                                "name": "Casual brown leather boots",
+                                "productImageUrl": "https://mystore-cdn/images/2711c829-9f64-458e-be85-01365e5ea5e2.png",
+                                "description": "Impressive product description",
+                                "price": 124.95
+                            }
+                        },
+                        {
+                            "itemId": "830d0bdc-e573-4b74-9efa-d66c8b2c6023",
+                            "score": 0.1278,
+                            "metadata": {
+                                "name": "Black leather dress shoes",
+                                "productImageUrl": "https://mystore-cdn/images/830d0bdc-e573-4b74-9efa-d66c8b2c6023.png",
+                                "description": "Impressive product description",
+                                "price": 89.95
+                            }
+                        }
+                    ],
+                    "recommendationId": "3725b598-9bdd-48f8-88f5-bcdf5a02b6ec"
+                }
+            },
+            "RerankResponse": {
+                "type": "object",
+                "properties": {
+                    "personalizedRanking": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "itemId": {
+                                    "type": "string"
+                                },
+                                "score": {
+                                    "type": "number"
+                                },
+                                "metadata": {
+                                    "type": "object",
+                                    "additionalProperties": true,
+                                    "description": "If item metadata is uploaded and associated with the Personalization APIs, this field will contain item metadata fields."
+                                }
+                            },
+                            "required": [
+                                "itemId"
+                            ]
+                        }
+                    },
+                    "recommendationId": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "itemList"
+                ],
+                "example": {
+                    "personalizedRanking": [
+                        {
+                            "itemId": "2711c829-9f64-458e-be85-01365e5ea5e2",
+                            "score": 0.1278,
+                            "metadata": {
+                                "name": "Casual brown leather boots",
+                                "productImageUrl": "https://mystore-cdn/images/2711c829-9f64-458e-be85-01365e5ea5e2.png",
+                                "description": "Impressive product description",
+                                "price": 124.95
+                            }
+                        },
+                        {
+                            "itemId": "830d0bdc-e573-4b74-9efa-d66c8b2c6023",
+                            "score": 0.1278,
+                            "metadata": {
+                                "name": "Black leather dress shoes",
+                                "productImageUrl": "https://mystore-cdn/images/830d0bdc-e573-4b74-9efa-d66c8b2c6023.png",
+                                "description": "Impressive product description",
+                                "price": 89.95
+                            }
+                        }
+                    ],
+                    "recommendationId": "3725b598-9bdd-48f8-88f5-bcdf5a02b6ec"
+                }
+            },
+            "EventsRequest": {
+                "type": "object",
+                "properties": {
+                    "sessionId": {
+                        "type": "string"
+                    },
+                    "userId": {
+                        "type": "string"
+                    },
+                    "eventList": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "eventId": {
+                                    "type": "string",
+                                    "description": "Identies this event, such as a UUID."
+                                },
+                                "eventType": {
+                                    "type": "string",
+                                    "description": "Type of event such as 'View', 'Click', 'Watch', 'Purchase'."
+                                },
+                                "eventValue": {
+                                    "type": "number",
+                                    "description": "Optional value associated with the event/interaction."
+                                },
+                                "impression": {
+                                    "type": "string",
+                                    "description": "Explicit item impressions represented as one or more item IDs separated by '|' character."
+                                },
+                                "itemId": {
+                                    "type": "string",
+                                    "description": "Item ID for this interaction. Can be specified in this field or within `properties`."
+                                },
+                                "properties": {
+                                    "type": "string",
+                                    "description": "JSON structure of contextual fields/values formatted as a string."
+                                },
+                                "recommendationId": {
+                                    "type": "string",
+                                    "description": "Echo of `recommendationId` from a recommendations response that is used to represent impressions."
+                                },
+                                "sentAt": {
+                                    "type": "integer",
+                                    "description": "Timestamp of the event represented in Unix timestamp format (seconds since the Epoch)"
+                                }
+                            },
+                            "required": [
+                                "sentAt"
+                            ]
+                        }
+                    },
+                    "experimentConversions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "recommender": {
+                                    "type": "string",
+                                    "description": "Recommender name to associate the experiment conversion with."
+                                },
+                                "feature": {
+                                    "type": "string",
+                                    "description": "Feature name of the user interface component to attribute for this conversion."
+                                },
+                                "metric": {
+                                    "type": "string",
+                                    "description": "Metric name to associate this conversion with"
+                                },
+                                "value": {
+                                    "type": "number",
+                                    "description": "Optional value to associate with the conversion event such as an item price or watch duration. If not specified, 1.0 will be used as the value."
+                                }
+                            }
+                        }
+                    }
+                },
+                "example": {
+                    "sessionId": "d4fd01b6-bb00-49e9-9575-a4eafcb71005",
+                    "userId": "54321",
+                    "eventList": [
+                        {
+                            "eventId": "d8b58b1c-60af-4c15-aa56-18e2ba36646f",
+                            "itemId": "830d0bdc-e573-4b74-9efa-d66c8b2c6023",
+                            "eventType": "VideoWatched",
+                            "eventValue": 0.80,
+                            "sentAt": 1651436281
+                        },
+                        {
+                            "eventId": "17204ad6-6a34-4f3f-a910-a58449c0f00c",
+                            "itemId": "38c703aa-b758-496c-bc88-d3a494d0ef77",
+                            "eventType": "ProductClicked",
+                            "sentAt": 1651436986
+                        }
+                    ],
+                    "experimentConversions": [
+                        {
+                            "recommender": "recommended-for-you",
+                            "feature": "homepage-recommended-for-you-widget",
+                            "metric": "homepage-recommended-for-you-widget-ctr",
+                            "value": 1.0
+                        },
+                        {
+                            "recommender": "frequently-bought-together",
+                            "feature": "cross-sell-widget",
+                            "metric": "cross-sell-widget-price",
+                            "value": 24.99
+                        }
+                    ]
+                }
+            }
+        }
+    }
+}

@@ -4,6 +4,10 @@ The Personalization APIs solution operates based on a configuration stored in [A
 
 At deployment time, you can have the project automatically generate a configuration based the recommenders, campaigns, and event trackers in one or more Amazon Personalize dataset groups in your AWS environment. This is a great way to save a lot of time setting up the foundation of your configuration. You can then take this base configuration and customize it further to suit your needs.
 
+## OpenAPI/Swagger specification
+
+Each time the application [configuration](./configuration.md) is deployed in AppConfig, the solution will generate an [OpenAPI/Swagger](https://www.openapis.org/) specification file based the configuration. The OpenAPI specification file is written to the `/openapi` folder in the staging bucket created as part of this project. You can use this specification file to test your APIs using a utility such as [Postman](https://www.postman.com/) or the [Swagger Editor](https://editor.swagger.io/) tool as well as generating clients for your APIs in a variety of programming languages.
+
 ## Primary concepts
 
 - **Configuration** - there is a single configuration definition that is represented in JSON and stored as a hosted configuration profile in AWS AppConfig. A configuration skeleton is automatically created by the Personalization APIs solution deployment that you can quickly update to match your environment.

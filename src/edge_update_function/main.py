@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
 import os
 import io
 import json
@@ -6,7 +9,6 @@ import logging
 import zipfile
 
 from urllib.request import urlopen
-from pathlib import Path
 from crhelper import CfnResource
 
 logger = logging.getLogger()

@@ -2,6 +2,12 @@
 
 The API entry points have consistent and predictable paths based on your [configuration](./configuration.md). Since entry point paths are resolved dynamically for each request based on your configuration, an update to your configuration will be reflected in the API entry points after your configuration is deployed via [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/) **and** the API functions reload their configuration (every 45 seconds, by default).
 
+## OpenAPI/Swagger specification
+
+Each time the application [configuration](./configuration.md) is deployed in AppConfig, the solution will generate an [OpenAPI/Swagger](https://www.openapis.org/) specification file based the configuration. The OpenAPI specification file is written to the `/openapi` folder in the staging bucket created as part of this project. You can use this specification file to test your APIs using a utility such as [Postman](https://www.postman.com/) or the [Swagger Editor](https://editor.swagger.io/) tool as well as generating clients for your APIs in a variety of programming languages.
+
+![Personalization APIs Postman](../images/postman.png)
+![Personalization APIs Swagger Editor](../images/swagger_editor.png)
 ## Inference entry points
 
 The inference entry points provide recommendations (inference) based on an API action, namespace, recommender, and action-specific required path parameters.
@@ -154,6 +160,7 @@ The request Content-Type should be `application/json` and the body of the reques
       {
           "recommender": "string",
           "feature": "string",
+          "metric": "string",
           "value": number
       }
    ]
@@ -168,6 +175,7 @@ The request Content-Type should be `application/json` and the body of the reques
 - `experimentConversions` includes experiment conversions for the user (optional):
     - `experimentConversions[].recommender`: recommender path within the namespace for the experiment conversion (required).
     - `experimentConversions[].feature`: feature name for the experiment for the conversion (optional but recommended). If not specified, the first experiment for the recommender in the configuration will be used to log the conversion event. If you are running multiple experiments for the same recommender, you should specify the feature name when retrieving recommendations and logging conversion events.
+    - `experimentConversions[].metric`: metric name to attribute the conversion event value to.
     - `experimentConversions[].value`: conversion event value that is used as the Evidently metric value (optional). Defaults to 1.0 if not specified.
 - `eventList` and `experimentConversions` are both optional but at least one should be included in the request. Therefore, you can use both or either in the same request.
 

@@ -13,6 +13,8 @@ Although the project is tightly integrated with [Amazon Personalize](https://aws
 - Automatically derive context from intrinsic data in each request to enhance the relevancy of recommendations
 - Seamlessly perform A/B tests across different recommender implementations
 - Dynamic and flexible configuration that makes it easy to safely deploy, monitor, and rollback configuration changes
+- Automatic generation of application configuration given existing Amazon Personalize resources (optional)
+- Automatic generation of [OpenAPI/Swagger](https://www.openapis.org/) specification based on application configuration
 
 ## Caching
 

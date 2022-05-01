@@ -4,11 +4,12 @@
 import json
 import boto3
 import os
+import logging
 from typing import Dict
 from crhelper import CfnResource
-from aws_lambda_powertools import Logger
 
-logger = Logger()
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 personalize = boto3.client('personalize')
 appconfig = boto3.client('appconfig')

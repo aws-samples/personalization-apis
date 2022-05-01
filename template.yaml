@@ -159,11 +159,10 @@ Globals:
       CreatedBy: Personalization-APIs-Solution
 
 Resources:
-  ItemMetadataBucket:
+  StagingBucket:
     Type: AWS::S3::Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
     Properties:
+      BucketName: !Sub '${AWS::StackName}-${AWS::Region}-${AWS::AccountId}-staging'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -295,7 +294,7 @@ Resources:
           AWS_APPCONFIG_EXTENSION_PREFETCH_LIST: !Sub '/applications/${ApplicationName}/environments/${EnvironmentName}/configurations/Personalization-API-Config'
           TZ: !Ref TimeZone
           ApiType: HTTP
-          ItemMetadataBucket: !Ref ItemMetadataBucket
+          StagingBucket: !Ref StagingBucket
           ItemsTablePrimaryKeyFieldName: !FindInMap [DDB, Parameters, ItemsTablePrimaryKeyFieldName]
       Role: !GetAtt PersonalizationApiExecutionRole.Arn
       Events:
@@ -353,7 +352,7 @@ Resources:
           AWS_APPCONFIG_EXTENSION_PREFETCH_LIST: !Sub '/applications/${ApplicationName}/environments/${EnvironmentName}/configurations/Personalization-API-Config'
           TZ: !Ref TimeZone
           ApiType: REST
-          ItemMetadataBucket: !Ref ItemMetadataBucket
+          StagingBucket: !Ref StagingBucket
           ItemsTablePrimaryKeyFieldName: !FindInMap [DDB, Parameters, ItemsTablePrimaryKeyFieldName]
       Role: !GetAtt PersonalizationApiExecutionRole.Arn
       Events:
@@ -624,7 +623,7 @@ Resources:
           - Effect: Allow
             Action:
               - s3:GetObject
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::${ItemMetadataBucket}/localdbs/*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${StagingBucket}/localdbs/*'
       Roles:
         - Ref: PersonalizationApiExecutionRole
 
@@ -661,7 +660,7 @@ Resources:
             Action:
               - s3:GetObject
               - s3:PutObject
-            Resource: !Sub 'arn:${AWS::Partition}:s3:::*'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${AWS::StackName}-${AWS::Region}-${AWS::AccountId}-staging*'
       Environment:
         Variables:
           AWS_APPCONFIG_EXTENSION_PREFETCH_LIST: !Sub '/applications/${ApplicationName}/environments/${EnvironmentName}/configurations/Personalization-API-Config'
@@ -671,7 +670,7 @@ Resources:
         BucketEvent:
           Type: S3
           Properties:
-            Bucket: !Ref ItemMetadataBucket
+            Bucket: !Ref StagingBucket
             Events: 's3:ObjectCreated:*'
             Filter:
               S3Key:
@@ -682,13 +681,19 @@ Resources:
   ConfigValidatorFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Description: Validates the configuration set in AppConfig and fires events to synchronizes CloudFront policies and DynamoDB tables
+      Description: Validates the configuration set in AppConfig and fires events to synchronize CloudFront policies and DynamoDB tables
       Timeout: 15
       CodeUri: src/config_validator_function
       Handler: main.lambda_handler
       MemorySize: 256
       Layers:
         - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+      Environment:
+        Variables:
+          StagingBucket: !Sub '${AWS::StackName}-${AWS::Region}-${AWS::AccountId}-staging'
+          AuthenticationScheme: !Ref AuthenticationScheme
+          ApiGatewayHost: ''  # Will be updated by ConfigValidatorEnvFunction
+          CloudFrontHost: ''  # Will be updated by ConfigValidatorEnvFunction
       Policies:
         - Statement:
           - Sid: EventBridgePolicy
@@ -696,6 +701,11 @@ Resources:
             Action:
               - events:PutEvents
             Resource: '*'
+          - Sid: StagingBucketAccess
+            Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${AWS::StackName}-${AWS::Region}-${AWS::AccountId}-staging/openapi/*'
 
   ConfigValidatorPermission:
     Type: AWS::Lambda::Permission
@@ -704,6 +714,50 @@ Resources:
       FunctionName: !GetAtt ConfigValidatorFunction.Arn
       Principal: appconfig.amazonaws.com
       SourceArn: !Sub 'arn:${AWS::Partition}:appconfig:${AWS::Region}:${AWS::AccountId}:*'
+
+  ConfigValidatorEnvFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Updates the config validator handler function environment
+      Timeout: 30
+      CodeUri: src/config_validator_env_function
+      Handler: main.lambda_handler
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - lambda:GetFunctionConfiguration
+              - lambda:UpdateFunctionConfiguration
+            Resource: !GetAtt ConfigValidatorFunction.Arn
+          - Effect: Allow
+            Action:
+              - lambda:GetLayerVersion
+            Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource:
+              - !Sub 'arn:aws:iam::${AWS::AccountId}:role/*'
+      Environment:
+        Variables:
+          ConfigValidatorFunctionArn: !GetAtt ConfigValidatorFunction.Arn
+          ApiGatewayHost:
+            !If
+              - DeployApiGatewayRest
+              - !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/"
+              - !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/"
+          CloudFrontHost:
+            !If
+              - DeployCloudFront
+              - !Sub
+                - 'https://${Domain}'
+                - Domain: !GetAtt ApiCdn.DomainName
+              - ""
+
+  CustomConfigValidatorEnv:
+    Type: Custom::ConfigValidatorEnv
+    Properties:
+      ServiceToken: !GetAtt ConfigValidatorEnvFunction.Arn
 
 ##########################################################################
 #  Cognito Resources                                                     #
@@ -998,6 +1052,10 @@ Resources:
       GrowthType: LINEAR
       ReplicateTo: NONE
 
+##########################################################################
+#  Custom Resource Utilities                                             #
+##########################################################################
+
   GenerateConfigFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1005,8 +1063,6 @@ Resources:
       Timeout: 30
       CodeUri: src/generate_config_function
       Handler: main.lambda_handler
-      Layers:
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
       Policies:
         - Statement:
           - Effect: Allow
@@ -1039,10 +1095,93 @@ Resources:
           AppConfigConfigurationProfileId: !Ref AppConfigConfigurationProfile
 
   CustomGenerateConfig:
+    DependsOn: [ StagingBucket, CustomConfigValidatorEnv ]
     Type: Custom::GenerateConfig
     Properties:
       ServiceToken: !GetAtt GenerateConfigFunction.Arn
       DatasetGroupNames: !Ref GenerateConfigDatasetGroupNames
+
+  CleanupBucketLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Empties staging bucket so it can be deleted when the CloudFormation stack is deleted
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+
+          def handler(event, context):
+            print(event)
+
+            responseData = {}
+            responseStatus = cfnresponse.SUCCESS
+
+            try:
+              bucketName = event['ResourceProperties']['BucketName']
+
+              if event['RequestType'] == 'Create':
+                responseData['Message'] = "Resource creation succeeded"
+              elif event['RequestType'] == 'Update':
+                responseData['Message'] = "Resource update succeeded"
+              elif event['RequestType'] == 'Delete':
+                # Empty the S3 bucket
+                s3 = boto3.resource('s3')
+                bucket = s3.Bucket(bucketName)
+                bucket.objects.all().delete()
+
+                responseData['Message'] = "Resource deletion succeeded"
+
+            except Exception as e:
+              print("Error: " + str(e))
+              responseStatus = cfnresponse.FAILED
+              responseData['Message'] = "Resource {} failed: {}".format(event['RequestType'], e)
+
+            cfnresponse.send(event, context, responseStatus, responseData)
+
+      Handler: index.handler
+      Runtime: python3.9
+      Timeout: 300
+      Role: !GetAtt CleanupBucketLambdaExecutionRole.Arn
+
+  CleanupBucketLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: LoggingPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+        - PolicyName: S3Policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:List*
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:s3:::${StagingBucket}'
+                  - !Sub 'arn:${AWS::Partition}:s3:::${StagingBucket}/*'
+
+  EmptyStagingBucket:
+    Type: Custom::EmptyStagingBucket
+    Properties:
+      ServiceToken: !GetAtt CleanupBucketLambdaFunction.Arn
+      BucketName: !Ref StagingBucket
 
 ##########################################################################
 #  Outputs                                                               #
@@ -1099,9 +1238,9 @@ Outputs:
       - 'https://${Domain}'
       - Domain: !GetAtt ApiCdn.DomainName
 
-  ItemMetadataBucket:
-    Description: S3 bucket used to stage bulk item metadata updates
-    Value: !Ref ItemMetadataBucket
+  StagingBucket:
+    Description: S3 bucket used to stage data such as bulk item metadata updates and OpenAPI API definitions
+    Value: !Ref StagingBucket
 
   AppConfigApplication:
     Description: AWS AppConfig application ID
