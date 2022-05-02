@@ -6,6 +6,7 @@ import json
 
 from copy import copy
 from typing import Dict
+from datetime import datetime
 from http import HTTPStatus
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor, Future, wait
@@ -142,6 +143,12 @@ def process_targets(namespace: str, namespace_config: Dict, api_event: Dict):
         raise ConfigError(HTTPStatus.NOT_FOUND, 'NamespaceEventTargetsNotFound', 'No event targets are defined for this namespace path')
 
     event_body = api_event.json_body
+
+    # Set sentAt if omitted from any of the events.
+    if event_body.get('eventList'):
+        for event in event_body['eventList']:
+            if not 'sentAt' in event:
+                event['sentAt'] = int(datetime.now().timestamp())
 
     targets: EventTarget = []
 
