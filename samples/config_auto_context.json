@@ -3,7 +3,8 @@
     "namespaces": {
         "my-store": {
             "inferenceItemMetadata": {
-                "type": "localdb"
+                "type": "localdb",
+                "syncInterval": 300
             },
             "autoContext": {
                 "deviceType": {

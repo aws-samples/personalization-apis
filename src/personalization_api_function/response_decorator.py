@@ -34,11 +34,12 @@ metrics = Metrics()
 table_name_prefix = os.environ.get('ItemsTableNamePrefix', 'PersonalizationApiItemMetadata_')
 primary_key_name = os.environ.get('ItemsTablePrimaryKeyFieldName', 'id')
 
-PREPARE_FREQUENCY = 300 # 5 minutes
-
+PREPARE_CHECK_FREQUENCY = 5 # 5 seconds
+DEFAULT_LOCALDB_DOWNLOAD_FREQ = 300 # 5 minutes
 class ResponseDecorator(ABC):
     _decorators: Dict[str, Any] = {}
-    _last_prepare = 0
+    _last_prepare_check = 0
+    _last_localdb_download_attempt = {}
 
     @abstractmethod
     def decorate(self, response: Dict) -> Dict:
@@ -51,7 +52,7 @@ class ResponseDecorator(ABC):
     def prepare_datastores(config: Dict, background: BackgroundTasks):
         start = time.time()
 
-        if start - ResponseDecorator._last_prepare > PREPARE_FREQUENCY:
+        if start - ResponseDecorator._last_prepare_check > PREPARE_CHECK_FREQUENCY:
             bucket = os.environ['StagingBucket']
 
             prepared_count = 0
@@ -64,19 +65,26 @@ class ResponseDecorator(ABC):
                 type = metadata_config.get('type')
 
                 if type == 'localdb':
-                    background.submit(ResponseDecorator._download_localdb, namespace = namespace, bucket = bucket)
-                    prepared_count += 1
+                    sync_interval = metadata_config.get('syncInterval', DEFAULT_LOCALDB_DOWNLOAD_FREQ)
+
+                    if start - ResponseDecorator._last_localdb_download_attempt.get(namespace, 0) > sync_interval:
+                        ResponseDecorator._last_localdb_download_attempt[namespace] = time.time()
+                        background.submit(ResponseDecorator._download_localdb, namespace = namespace, bucket = bucket)
+                        prepared_count += 1
+                    else:
+                        logger.debug('Localdb inference metadata sync check for namespace %s not due yet', namespace)
+
                 elif type == 'dynamodb':
                     ResponseDecorator._decorators[namespace] = DynamoDbResponseDecorator(table_name_prefix + namespace, primary_key_name)
                     prepared_count += 1
 
-            ResponseDecorator._last_prepare = prepare_done = time.time()
+            ResponseDecorator._last_prepare_check = prepare_done = time.time()
 
             if prepared_count > 0:
                 logger.info('Prepared %s datastores in %0.2fms', prepared_count, prepare_done - start)
 
         else:
-            logger.debug('Item metadata datastores not due for refresh')
+            logger.debug('Item metadata datastores not due for prepare check')
 
     @staticmethod
     def get_instance(namespace: str, config: Dict) -> Any:

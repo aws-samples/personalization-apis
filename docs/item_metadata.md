@@ -11,7 +11,8 @@ Declares that item metadata should be managed in a local DBM datastore for a nam
     "namespaces": {
         "my-app-1": {
             "inferenceItemMetadata": {
-                "type": "localdb"
+                "type": "localdb",
+                "syncInterval": 300
             },
             "recommenders": {
             }
@@ -21,6 +22,7 @@ Declares that item metadata should be managed in a local DBM datastore for a nam
 ```
 
 - `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.type`: Must be `"localdb"` (required).
+- `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.syncInterval`: How often to sync DBM files from the S3 staging bucket in seconds (optional, default is 300 seconds).
 
 ## Amazon DynamoDB tables
 

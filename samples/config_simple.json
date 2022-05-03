@@ -19,7 +19,8 @@
         "my-store": {
             "name": "My Store",
             "inferenceItemMetadata": {
-                "type": "localdb"
+                "type": "localdb",
+                "syncInterval": 300
             },
             "recommenders": {
                 "recommend-items": {
