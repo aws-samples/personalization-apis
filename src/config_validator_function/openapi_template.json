@@ -235,7 +235,7 @@
                         },
                         {
                             "itemId": "830d0bdc-e573-4b74-9efa-d66c8b2c6023",
-                            "score": 0.1278,
+                            "score": 0.0932,
                             "metadata": {
                                 "name": "Black leather dress shoes",
                                 "productImageUrl": "https://mystore-cdn/images/830d0bdc-e573-4b74-9efa-d66c8b2c6023.png",
@@ -293,7 +293,7 @@
                         },
                         {
                             "itemId": "830d0bdc-e573-4b74-9efa-d66c8b2c6023",
-                            "score": 0.1278,
+                            "score": 0.0932,
                             "metadata": {
                                 "name": "Black leather dress shoes",
                                 "productImageUrl": "https://mystore-cdn/images/830d0bdc-e573-4b74-9efa-d66c8b2c6023.png",
@@ -349,7 +349,7 @@
                                 },
                                 "sentAt": {
                                     "type": "integer",
-                                    "description": "Timestamp of the event represented in Unix timestamp format (seconds since the Epoch)"
+                                    "description": "Timestamp of the event represented in Unix timestamp format (seconds since the Epoch). If omitted, the current time will be used."
                                 }
                             },
                             "required": [
@@ -410,7 +410,7 @@
                         {
                             "recommender": "frequently-bought-together",
                             "feature": "cross-sell-widget",
-                            "metric": "cross-sell-widget-price",
+                            "metric": "cross-sell-widget-revenue",
                             "value": 24.99
                         }
                     ]
