@@ -26,6 +26,7 @@ Next, take the details of the project, feature, variations, and experiment to yo
                                 "project": "my-store",
                                 "metrics": {
                                     "productDetailRecClicked": {
+                                        "trackExposures": true,
                                         "entityIdKey": "userDetails.userId",
                                         "valueKey": "details.productClicked"
                                     }

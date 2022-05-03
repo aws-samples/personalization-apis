@@ -3,7 +3,8 @@
     "namespaces": {
         "my-store": {
             "inferenceItemMetadata": {
-                "type": "localdb"
+                "type": "localdb",
+                "syncInterval": 300
             },
             "recommenders": {
                 "related-items": {
@@ -14,6 +15,7 @@
                                 "project": "my-store",
                                 "metrics": {
                                     "productDetailRecClicked": {
+                                        "trackExposures": true,
                                         "entityIdKey": "userDetails.userId",
                                         "valueKey": "details.productClicked"
                                     }

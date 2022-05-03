@@ -299,6 +299,10 @@
                             "type": "object",
                             "required": [ "entityIdKey", "valueKey" ],
                             "properties": {
+                                "trackExposures": {
+                                    "type": "boolean",
+                                    "description": "Indicates whether exposures should be tracked with a custom event."
+                                },
                                 "entityIdKey": {
                                     "type": "string",
                                     "description": "Entity ID Key for the Evidently metric to track exposures and conversions (e.g., 'userDetails.userId')."
@@ -510,6 +514,12 @@
                         "type": {
                             "type": "string",
                             "enum": [ "localdb" ]
+                        },
+                        "syncInterval": {
+                            "type": "integer",
+                            "minimum": 5,
+                            "maximum": 3600,
+                            "description": "Number of seconds to wait before checking the S3 staging bucket for updated DBM files."
                         }
                     },
                     "additionalProperties": false

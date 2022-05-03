@@ -110,8 +110,11 @@ def evidently_evaluate_feature(feature: str, experiment_config: Dict, variations
             if experiment_config.get('metrics'):
                 events = []
                 for metric_name, metric_config in experiment_config['metrics'].items():
-                    logger.info('Recording variation exposure for Evidently variation "%s" of experiment "%s" for metric "%s"', response.get('variation'), response.get('details'), metric_name)
-                    events.append(create_exposure_event(metric_config, user_id))
+                    if metric_config.get('trackExposures', True):
+                        logger.info('Recording variation exposure for Evidently variation "%s" of experiment "%s" for metric "%s"', response.get('variation'), response.get('details'), metric_name)
+                        events.append(create_exposure_event(metric_config, user_id))
+                    else:
+                        logger.info('Variation exposures for Evidently variation "%s" of experiment "%s" for metric "%s" are DISABLED; skipping', response.get('variation'), response.get('details'), metric_name)
 
                 background.submit(record_evidently_events, experiment_config['project'], events)
             else:
