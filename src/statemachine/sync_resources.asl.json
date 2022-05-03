@@ -24,6 +24,12 @@
                             "Type": "Task",
                             "Resource": "${SyncDyanamoDbTableFunctionArn}",
                             "InputPath": "$.detail.content",
+                            "Retry": [{
+                                "ErrorEquals": ["ResourcePending"],
+                                "IntervalSeconds": 5,
+                                "BackoffRate": 1.5,
+                                "MaxAttempts": 10
+                            }],
                             "End": true
                         }
                     }
