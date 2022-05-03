@@ -664,6 +664,7 @@ Resources:
       Environment:
         Variables:
           AWS_APPCONFIG_EXTENSION_PREFETCH_LIST: !Sub '/applications/${ApplicationName}/environments/${EnvironmentName}/configurations/Personalization-API-Config'
+          AWS_APPCONFIG_EXTENSION_POLL_INTERVAL_SECONDS: 10
           ItemsTablePrimaryKeyFieldName: !FindInMap [DDB, Parameters, ItemsTablePrimaryKeyFieldName]
           ItemsTableNamePrefix: !FindInMap [DDB, Parameters, ItemsTableNamePrefix]
       Events:
@@ -766,7 +767,7 @@ Resources:
     Condition: DeployCognito
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: !Sub '${AWS::StackName}-User-Pool'
+      UserPoolName: !Sub '${AWS::StackName}-${AWS::Region}-User-Pool'
       AliasAttributes:
         - email
       AutoVerifiedAttributes:
@@ -790,7 +791,7 @@ Resources:
     Condition: DeployCognito
     Type: AWS::Cognito::UserPoolClient
     Properties:
-      ClientName: !Sub '${AWS::StackName}-Client'
+      ClientName: !Sub '${AWS::StackName}-${AWS::Region}-Client'
       GenerateSecret: false
       ExplicitAuthFlows:
         - ALLOW_USER_PASSWORD_AUTH
@@ -866,7 +867,7 @@ Resources:
     Condition: DeployApiGatewayRest
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: SyncApiGatewayCachePolicy
+      PolicyName: !Sub ${AWS::StackName}-${AWS::Region}-SyncApiGatewayCachePolicy
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -883,7 +884,7 @@ Resources:
     Condition: DeployCloudFront
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: SyncCloudFrontPoliciesPolicy
+      PolicyName: !Sub ${AWS::StackName}-${AWS::Region}-SyncCloudFrontPoliciesPolicy
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -916,6 +917,7 @@ Resources:
             Action:
               - dynamodb:CreateTable
               - dynamodb:DescribeTable
+              - dynamodb:TagResource
               - dynamodb:UpdateTable
             Resource:
               - !Sub
@@ -938,7 +940,7 @@ Resources:
         DefaultTTL: 10  # Managed by SyncCacheSettingsFunction when config is deployed
         MaxTTL: 3600  # Managed by SyncCacheSettingsFunction when config is deployed
         MinTTL: 2  # Managed by the SyncCacheSettingsFunction when config is deployed
-        Name: !Sub 'PersonalizationAPIs-${AWS::StackName}'
+        Name: !Sub 'PersonalizationAPIs-${AWS::StackName}-${AWS::Region}'
         ParametersInCacheKeyAndForwardedToOrigin:
           EnableAcceptEncodingBrotli: 'true'
           EnableAcceptEncodingGzip: 'true'
@@ -954,7 +956,7 @@ Resources:
     Type: AWS::CloudFront::OriginRequestPolicy
     Properties:
       OriginRequestPolicyConfig:
-        Name: !Sub 'PersonalizationAPIs-${AWS::StackName}'
+        Name: !Sub 'PersonalizationAPIs-${AWS::StackName}-${AWS::Region}'
         Comment: !Sub 'Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) origin request policy (maintained by AppConfig validator)'
         CookiesConfig:
           CookieBehavior: none
