@@ -44,7 +44,7 @@ class PersonalizationConfig(ABC):
                 else:
                     for action_config in recommenders.values():
                         if action_config.get(recommender_path):
-                            config = action_config.get[recommender_path]
+                            config = action_config.get(recommender_path)
 
         return config
 
