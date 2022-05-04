@@ -115,6 +115,56 @@ class OpenApiGenerator:
                                                     "$ref": "#/components/schemas/RecommendationResponse"
                                                 }
                                             }
+                                        },
+                                        "headers": {
+                                            "Age": {
+                                                "schema": {
+                                                    "type": "integer"
+                                                },
+                                                "description": "Contains the time in seconds the object was in a proxy cache"
+                                            },
+                                            "ETag": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Uniquely identifies the response/resource"
+                                            },
+                                            "Cache-Control": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "HTTP caching control directive"
+                                            },
+                                            "Apigw-Requestid": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon API Gateway request identifier"
+                                            },
+                                            "X-Cache": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Uniquely identifies the response/resource"
+                                            },
+                                            "X-Amz-Cf-Pop": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon CloudFront POP that request/response was routed through"
+                                            },
+                                            "X-Amz-Cf-Id": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon CloudFront identifier"
+                                            },
+                                            "X-Personalization-Config-Version": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Personalization APIs configuration version"
+                                            }
                                         }
                                     }
                                 }
@@ -156,6 +206,56 @@ class OpenApiGenerator:
                                                     "$ref": "#/components/schemas/RecommendationResponse"
                                                 }
                                             }
+                                        },
+                                        "headers": {
+                                            "Age": {
+                                                "schema": {
+                                                    "type": "integer"
+                                                },
+                                                "description": "Contains the time in seconds the object was in a proxy cache"
+                                            },
+                                            "ETag": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Uniquely identifies the response/resource"
+                                            },
+                                            "Cache-Control": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "HTTP caching control directive"
+                                            },
+                                            "Apigw-Requestid": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon API Gateway request identifier"
+                                            },
+                                            "X-Cache": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Uniquely identifies the response/resource"
+                                            },
+                                            "X-Amz-Cf-Pop": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon CloudFront POP that request/response was routed through"
+                                            },
+                                            "X-Amz-Cf-Id": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon CloudFront identifier"
+                                            },
+                                            "X-Personalization-Config-Version": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Personalization APIs configuration version"
+                                            }
                                         }
                                     }
                                 }
@@ -195,6 +295,56 @@ class OpenApiGenerator:
                                                 "schema": {
                                                     "$ref": "#/components/schemas/RerankResponse"
                                                 }
+                                            }
+                                        },
+                                        "headers": {
+                                            "Age": {
+                                                "schema": {
+                                                    "type": "integer"
+                                                },
+                                                "description": "Contains the time in seconds the object was in a proxy cache"
+                                            },
+                                            "ETag": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Uniquely identifies the response/resource"
+                                            },
+                                            "Cache-Control": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "HTTP caching control directive"
+                                            },
+                                            "Apigw-Requestid": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon API Gateway request identifier"
+                                            },
+                                            "X-Cache": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Uniquely identifies the response/resource"
+                                            },
+                                            "X-Amz-Cf-Pop": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon CloudFront POP that request/response was routed through"
+                                            },
+                                            "X-Amz-Cf-Id": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Amazon CloudFront identifier"
+                                            },
+                                            "X-Personalization-Config-Version": {
+                                                "schema": {
+                                                    "type": "string"
+                                                },
+                                                "description": "Personalization APIs configuration version"
                                             }
                                         }
                                     }
