@@ -37,6 +37,9 @@ def sync_tables(config: Dict) -> List[str]:
 
 @tracer.capture_method
 def sync_table(path: str, ns_config: Dict) -> str:
+    if not isinstance(ns_config, dict):
+        return ''
+
     metadata_config = ns_config.get('inferenceItemMetadata')
     if not metadata_config:
         return ''
