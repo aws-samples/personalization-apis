@@ -9,7 +9,7 @@ from datetime import datetime
 from http import HTTPStatus
 from aws_lambda_powertools import Logger, Tracer
 from personalization_config import PersonalizationConfig
-from personalization_error import ConfigError, ValidationError
+from personalization_error import ConfigError, ValidationError, JSONDecodeValidationError
 from background_tasks import BackgroundTasks
 
 tracer = Tracer()
@@ -128,7 +128,10 @@ def evidently_evaluate_feature(feature: str, experiment_config: Dict, variations
 
 @tracer.capture_method
 def process_conversions(namespace: str, namespace_config: Dict, api_event: Dict, config: PersonalizationConfig):
-    event_body = api_event.json_body
+    try:
+        event_body = api_event.json_body
+    except json.decoder.JSONDecodeError as e:
+        raise JSONDecodeValidationError.from_json_decoder_error('InvalidJSONRequestPayload', e)
 
     conversions = event_body.get('experimentConversions')
     if not conversions:

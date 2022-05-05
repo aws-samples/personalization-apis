@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, Future, wait
 from botocore.exceptions import ClientError
 from aws_lambda_powertools import Logger, Tracer, Metrics
 from aws_lambda_powertools.metrics import MetricUnit
-from personalization_error import ConfigError, PersonalizeError
+from personalization_error import ConfigError, PersonalizeError, JSONDecodeValidationError
 from auto_values import resolve_auto_values
 
 logger = Logger(child=True)
@@ -142,7 +142,10 @@ def process_targets(namespace: str, namespace_config: Dict, api_event: Dict):
     if not config_targets:
         raise ConfigError(HTTPStatus.NOT_FOUND, 'NamespaceEventTargetsNotFound', 'No event targets are defined for this namespace path')
 
-    event_body = api_event.json_body
+    try:
+        event_body = api_event.json_body
+    except json.decoder.JSONDecodeError as e:
+        raise JSONDecodeValidationError.from_json_decoder_error('InvalidJSONRequestPayload', e)
 
     # Set sentAt if omitted from any of the events.
     if event_body.get('eventList'):

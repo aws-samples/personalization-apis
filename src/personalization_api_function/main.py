@@ -28,7 +28,7 @@ from personalize_resolver import PersonalizeResolver
 from lambda_resolver import LambdaResolver
 from sagemaker_resolver import SageMakerResolver
 from response_post_process import PostProcessor
-from personalization_error import ConfigError, PersonalizationError, ValidationError
+from personalization_error import ConfigError, PersonalizationError, ValidationError, JSONDecodeValidationError
 from evidently import evidently_evaluate_feature, process_conversions
 from event_targets import process_targets
 from auto_values import resolve_auto_values
@@ -536,7 +536,13 @@ def post_rerank_items(namespace: str, recommender: str, user_id: str) -> Respons
         logger.debug('Conditionally refreshing datastores in the backgound')
         ResponseDecorator.prepare_datastores(config.get_config(), background)
 
-        input_list = app.current_event.json_body
+        try:
+            input_list = app.current_event.json_body
+        except json.decoder.JSONDecodeError as e:
+            raise JSONDecodeValidationError.from_json_decoder_error('InvalidJSONRequestPayload', e)
+
+        if not isinstance(input_list, list):
+            raise ValidationError('InvalidRequestPayload', 'Request body must be valid JSON (array of item IDs)')
 
         response,_ = _rerank_items(namespace, recommender, user_id, input_list)
 

@@ -5,6 +5,7 @@
 Error abstractions
 """
 
+import json
 from http import HTTPStatus
 from botocore.exceptions import ClientError
 
@@ -35,6 +36,18 @@ class ValidationError(PersonalizationError):
         error_message: str,
     ):
         super().__init__('Validation', HTTPStatus.BAD_REQUEST, error_code, error_message)
+
+class JSONDecodeValidationError(ValidationError):
+    def __init__(
+        self,
+        error_code: str,
+        error_message: str
+    ):
+        super().__init__(error_code, error_message)
+
+    @classmethod
+    def from_json_decoder_error(cls, error_code: str, e: json.decoder.JSONDecodeError):
+        return cls(error_code, f"{e.msg}: line {e.lineno} column {e.colno} (char {e.pos})")
 
 class ConfigError(PersonalizationError):
     def __init__(
