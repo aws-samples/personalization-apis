@@ -200,7 +200,7 @@ def resolve_filter_parameters(variation_config: Dict, user_id: str) -> Tuple:
 
     filter_arn = None
     if filter_name:
-        filter_arn = f'arn:aws:personalize:{region}:{app.current_event.requestContext.accountId}:filter/{filter_name}'
+        filter_arn = f'arn:aws:personalize:{region}:{app.current_event.request_context.account_id}:filter/{filter_name}'
     elif variation_config.get('filters'):
         for filter in variation_config['filters']:
             condition = filter.get('condition')
