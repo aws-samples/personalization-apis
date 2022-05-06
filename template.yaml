@@ -5,7 +5,7 @@ Description: (P13N-RT-APIS) - Real-time personalization APIs for recommendation 
 Parameters:
   ApplicationName:
     Type: String
-    Description: Application name used to name AppConfig application.
+    Description: Application name used to name AWS AppConfig application.
 
   EnvironmentName:
     Type: String
@@ -36,7 +36,7 @@ Parameters:
     Type: String
     Description: >
       Create Amazon Cognito user pool and client that can be used to create OAuth2 tokens for API authentication. Only applicable when
-      the authentication scheme is "OAuth2-Cognito". If you have an existing Cognito user pool, select "No"
+      the authentication scheme is "OAuth2-Cognito". If you have an existing Cognito user pool, select "No".
     AllowedValues:
       - 'Yes'
       - 'No'
@@ -58,7 +58,7 @@ Parameters:
     Description: >
       Caching scheme to deploy with the API entry point type. Note that using "API-Gateway-REST" for the API entry point type
       includes a CloudFront distribution that is transparently managed by API Gateway. However, this distribution does not include
-      caching so you should select "API-Gateway-Cache" with "API-Gatewa-REST".
+      caching so you should select "API-Gateway-Cache" with "API-Gateway-REST".
     AllowedValues:
       - 'CloudFront'
       - 'API-Gateway-Cache'
@@ -74,6 +74,16 @@ Parameters:
       configuration.
     Default: ''
 
+  CreateSwaggerUI:
+    Type: String
+    Description: >
+      Create interactive public Swagger UI web interface to test APIs. If 'Yes', this option will create a CloudFront distribution for
+      the staging bucket that loads the auto-generated OpenAPI/Swagger specification. This interface will be publicly accessible.
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+    Default: 'Yes'
+
 Conditions:
   DeployApiGatewayHttp: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-HTTP' ]
   DeployApiGatewayRest: !Equals [ !Ref ApiEntryPointType, 'API-Gateway-REST' ]
@@ -87,6 +97,8 @@ Conditions:
     - !Equals [ !Ref CacheScheme, 'CloudFront' ]
     - !Equals [ !Ref CacheScheme, 'Both' ]
   DeployCognito: !Equals [ !Ref CreateCognitoResources, 'Yes' ]
+  DeploySwaggerUI: !Equals [ !Ref CreateSwaggerUI, 'Yes' ]
+  IADRegion: !Equals [!Ref 'AWS::Region', 'us-east-1' ]
 
 Rules:
   ApiKeyAuthTypeRule:
@@ -1001,6 +1013,9 @@ Resources:
             - GET
             - HEAD
             - OPTIONS
+      Tags:
+        - Key: CreatedBy
+          Value: Personalization-APIs-Solution
 
 ##########################################################################
 #  AppConfig Resources                                                   #
@@ -1057,7 +1072,6 @@ Resources:
 ##########################################################################
 #  Custom Resource Utilities                                             #
 ##########################################################################
-
   GenerateConfigFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -1186,6 +1200,97 @@ Resources:
       BucketName: !Ref StagingBucket
 
 ##########################################################################
+#  Swagger UI                                                            #
+##########################################################################
+  SwaggerUIBucketPolicy:
+    Condition: DeploySwaggerUI
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StagingBucket
+      PolicyDocument:
+        Statement:
+          - Action: s3:GetObject
+            Effect: Deny
+            Resource:
+              - !Sub 'arn:aws:s3:::${StagingBucket}/import/*'
+              - !Sub 'arn:aws:s3:::${StagingBucket}/localdbs/*'
+            Principal:
+              AWS: !Sub >-
+                arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                ${SwaggerUIBucketOriginAccessIdentity}
+          - Action: s3:GetObject
+            Effect: Allow
+            Resource: !Sub 'arn:aws:s3:::${StagingBucket}/*'
+            Principal:
+              AWS: !Sub >-
+                arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                ${SwaggerUIBucketOriginAccessIdentity}
+
+  SwaggerUIBucketOriginAccessIdentity:
+    Condition: DeploySwaggerUI
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'OriginAccessIdentity for ${StagingBucket}'
+
+  SwaggerUICDN:
+    Condition: DeploySwaggerUI
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub 'Swagger UI CDN for ${StagingBucket}'
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        Origins:
+          - DomainName: !Join
+              - ''
+              - - !Sub '${StagingBucket}.s3'
+                - !If [IADRegion, '', !Sub '-${AWS::Region}']
+                - '.amazonaws.com'
+            Id: S3
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub >-
+                origin-access-identity/cloudfront/${SwaggerUIBucketOriginAccessIdentity}
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html#attaching-managed-cache-policies
+          TargetOriginId: S3
+          ViewerProtocolPolicy: allow-all
+          ForwardedValues:
+            QueryString: 'true'
+      Tags:
+        - Key: CreatedBy
+          Value: Personalization-APIs-Solution
+
+  CopySwaggerUIAssetsFunction:
+    Condition: DeploySwaggerUI
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Copies Swagger UI static assets to the staging bucket
+      Timeout: 30
+      CodeUri: src/copy_swagger_ui_assets_function
+      Handler: main.lambda_handler
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${StagingBucket}/*
+
+  CustomCopySwaggerUIAssets:
+    Condition: DeploySwaggerUI
+    Type: Custom::CopySwaggerUIAssets
+    Properties:
+      ServiceToken: !GetAtt CopySwaggerUIAssetsFunction.Arn
+      TargetBucket: !Ref StagingBucket
+
+##########################################################################
 #  Outputs                                                               #
 ##########################################################################
 Outputs:
@@ -1263,3 +1368,10 @@ Outputs:
   GenerateConfigFunction:
     Description: Personalization APIs configuration generator Lambda function ARN
     Value: !GetAtt GenerateConfigFunction.Arn
+
+  SwaggerUI:
+    Condition: DeploySwaggerUI
+    Description: URL for the Swagger UI CDN
+    Value: !Sub
+      - 'https://${Domain}'
+      - Domain: !GetAtt SwaggerUICDN.DomainName
