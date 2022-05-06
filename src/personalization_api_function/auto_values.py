@@ -4,7 +4,7 @@
 import pytz
 
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict
 from aws_lambda_powertools import Logger, Tracer
 
 tracer = Tracer()
@@ -93,7 +93,7 @@ def resolve_auto_values(context_config: Dict, headers: Dict[str,str]) -> Dict[st
 
     return resolved_values
 
-def _resolve(rule: Dict, value: Any):
+def _resolve(rule: Dict, value: Any) -> Any:
     resolved_value = None
 
     if value is not None:

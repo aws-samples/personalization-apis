@@ -52,6 +52,8 @@ class PersonalizeResolver():
                 context = json.loads(context)
             params['context'] = context
 
+        logger.debug('Calling personalize.get_recommendations() with arguments: %s', params)
+
         try:
             response = self.personalize_runtime.get_recommendations(**params)
             logger.debug(response)
@@ -95,6 +97,8 @@ class PersonalizeResolver():
                 context = json.loads(context)
             params['context'] = context
 
+        logger.debug('Calling personalize.get_recommendations() with arguments: %s', params)
+
         try:
             response = self.personalize_runtime.get_recommendations(**params)
             logger.debug(response)
@@ -135,6 +139,8 @@ class PersonalizeResolver():
             if isinstance(context, str):
                 context = json.loads(context)
             params['context'] = context
+
+        logger.debug('Calling personalize.get_personalized_ranking() with arguments: %s', params)
 
         try:
             response = self.personalize_runtime.get_personalized_ranking(**params)
