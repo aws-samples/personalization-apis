@@ -1,13 +1,13 @@
 # Real-Time Personalization APIs
 
-Machine learning recommenders are an effective tool to enhance the user experience in client applications through personalized product and content recommendations. However, putting recommendations to work in client applications and keeping these recommenders updated in real-time with in-app user behavior often requires building and maintaining complicated middleware components between your recommenders and client applications. This project contains the source code and supporting files for deploying low-latency real-time APIs that sit between your recommenders and client applications that provide vital features such as response caching, decorating recommender responses with the item metadata needed to render them in your applications, seamless A/B testing across your recommenders, API authentication, automatic user context, user event collection and fan out, and more.
+Machine learning recommenders are an effective tool to enhance the user experience in client applications through personalized product and content recommendations. However, putting recommendations to work in client applications and keeping these recommenders updated in real-time with in-app user behavior often requires building and maintaining complicated middleware components between your client applications and recommenders. This project provides the components necessary for deploying low-latency real-time APIs that sit between your client applications and recommenders. Key features include flexible/smart response caching, decorating recommender responses with the item metadata needed to render them in your applications, seamless A/B testing across your recommenders, API authentication, automatic user context, user event collection and fan out, and more.
 
 ![Personalization APIs Value Prop](./images/personalization-apis-value-prop.png)
 
-Although the project is tightly integrated with [Amazon Personalize](https://aws.amazon.com/personalize/), an AI service from AWS that allows you to create custom ML recommenders based on your data, it supports backend integrations with personalization providers built with [Amazon SageMaker](https://aws.amazon.com/sagemaker/), [AWS Lambda](https://aws.amazon.com/lambda/), or HTTP endpoints. Key features include:
+Although the project is tightly integrated with [Amazon Personalize](https://aws.amazon.com/personalize/), an AI service from AWS that allows you to create custom ML recommenders based on your data, it supports backend integrations with personalization providers built with [Amazon SageMaker](https://aws.amazon.com/sagemaker/) (experimental), [AWS Lambda](https://aws.amazon.com/lambda/) (experimental), or HTTP endpoints. Key features include:
 
 - Highly configurable caching that reduces both latency and the number of calls made to API endpoints and origin recommenders
-- Multiple API deployment and authentication approaches supported including OAuth2, API keys, and no authentication
+- Multiple opinionted API deployment and authentication approaches including OAuth2, API keys, and no authentication
 - Item metadata needed to render recommendations in client applications automatically included in API responses (i.e., response decoration)
 - Fan-out of incremental/streamed events to Amazon Personalize event trackers, [Amazon Kinesis Data Streams](https://aws.amazon.com/kinesis/data-streams/), and [Amazon Kinesis Data Firehose](https://aws.amazon.com/kinesis/data-firehose/)
 - Automatically derive context from intrinsic data in each request to enhance the relevancy of recommendations
@@ -15,6 +15,15 @@ Although the project is tightly integrated with [Amazon Personalize](https://aws
 - Dynamic and flexible configuration that makes it easy to safely deploy, monitor, and rollback configuration changes
 - Automatic generation of application configuration given existing Amazon Personalize resources (optional)
 - Automatic generation of [OpenAPI/Swagger](https://www.openapis.org/) specification based on application configuration
+- Optional Swagger web interface that allows for easy inspection and testing of API endpoints
+
+### Architecture
+
+This solution provides opinionated architectures for common deployment scenarios. The following diagram illustrates the components deployed for an API architecture that utilizes OAuth2 for authentication, CloudFront for regional shared caches, and Amazon API Gateway for API management. The [API origin function](./src/personalization_api_function/main.py) is the heart of this solution.
+
+![Deployment Architecture OAuth2 Auth](./images/architecture-oauth2.png)
+
+Additional deployment scenarios with alternative authenication and caching approaches are also supported. See the installation instructions below for details.
 
 ## Caching
 
@@ -113,6 +122,7 @@ The `sam build --use-container --cached` command will build and package the sour
 |ApiEntryPointType | String | 'API-Gateway-HTTP' or 'API-Gateway-REST' | 'API-Gateway-HTTP' | API entry point type for requests that access the personalization APIs. "API-Gateway-REST" is recommended when the authentication scheme is "None" or "OAuth2-Cognito" for the best performance and lowest cost. |
 |CacheScheme | String | 'CloudFront', 'API-Gateway-Cache', 'Both', 'None' | 'CloudFront' | Caching scheme to deploy with the API entry point type. Note that using "API-Gateway-REST" for the API entry point type includes a CloudFront distribution that is transparently managed by API Gateway. However, this distribution does not include caching so you should select "API-Gateway-Cache" with "API-Gateway-REST".|
 |GenerateConfigDatasetGroupNames | String | Dataset group names or 'all' | | Specify one or more Amazon Personalize dataset group names or 'all' and a personalization APIs configuration will be automatically generated during deployment by checking the dataset groups for recommenders, campaigns, and event trackers. |
+|CreateSwaggerUI|String|'Yes' or 'No'|'Yes'|Create public [Swagger](https://swagger.io/) web UI that can be used to inspect and test APIs.|
 
 #### Deployment combinations
 
@@ -137,7 +147,7 @@ The solution retrieves configuration details from [AWS AppConfig](https://aws.am
 
 Once your recommenders are configured in AppConfig, it's time to upload your item metadata to the S3 bucket created by the solution. The item metadata file contains the attributes of each item that are needed to render them in your client applications (e.g., item name, description, image URL, price, media URL, etc). Your item metadata file needs to be contained in a single JSON file in the [JSON Lines](https://jsonlines.org/) format. The solution will automatically detect when you upload your metadata file to the proper folder in the S3 bucket and load your metadata into the datastore setup in your configuration. See the [item metadata documentation](./docs/item_metadata.md) for details.
 
-### Step 5: Deploy OAuth2 edge authentication resources (OAuth2-Cognito only!)
+### Step 5: Deploy OAuth2 edge authentication resources (**OAuth2-Cognito only!**)
 
 **If you deployed the Personalization APIs solution with the `ApiKey` or `None` authentication scheme, you can skip this step.**
 
@@ -153,7 +163,9 @@ Once deployment finishes successfully, sign in to the AWS console, switch to the
 
 ### Testing the Personalization APIs
 
-At this point you should be able to test the Personalization API endpoints. You can do this with a utility like [Postman](https://www.postman.com/) or the cURL command. The root URL to use for testing your APIs depends on the deployment configuration you used in Step 2:
+At this point you should be able to test the Personalization API endpoints. You can do this with a utility like [Swagger UI](https://swagger.io/), [Postman](https://www.postman.com/), or the cURL command. This solution automatically generates an [OpenAPI/Swagger](https://www.openapis.org/) specification file each time the application configuration is updated. You can find the generated OpenAPI spec file in the staging bucket under `/openapi/openapi.json`. If you deployed the solution with the `CreateSwaggerUI` parameter set to `Yes`, a public web UI endpoint was created that hosts the generated OpenAPI/Swagger specification. See the `SwaggerUI` CloudFormation output parameter for the URL to this endpoint. Otherwise, the generated OpenAPI/Swagger spec file can be downloaded from the staging bucket and imported into Postman.
+
+The root URL to use for testing your APIs depends on the deployment configuration you used in Step 2:
 
 - If you deployed with the `API-Gateway-REST` API entry point type:
     - Use the value of the `RestApiEndpointUrl` CloudFormation output parameter from Step 2 as your API root URL (you can also find this URL in the AWS console for API Gateway)
