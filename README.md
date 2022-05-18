@@ -76,17 +76,7 @@ See the [Configuration](./docs/configuration.md) documentation for details.
 
 ***IMPORTANT NOTE:** Deploying this solution in your AWS account will create and consume AWS resources, which will cost money. Therefore, if after installing this solution you choose not to use it as part of your recommender API strategy, be sure to follow the Uninstall instructions below to avoid ongoing charges and to clean up all data.*
 
-### Option 1 - Install from Serverless Application Repository (the easy way)
-
-The **easiest way to deploy this application** is from the [Serverless Application Repository](https://aws.amazon.com/serverless/serverlessrepo/) (SAR).
-
-1. Within the AWS account where you wish to deploy the application, browse to the [application's page](https://serverlessrepo.aws.amazon.com/applications/arn:aws:serverlessrepo:us-east-1:316031960777:applications~Personalization-APIs) in the Serverless Application Repository and click **"Deploy"**.
-2. Enter/update values in the **"Application settings"** panel (described below as "Deployment template parameters") and click **"Deploy"** again.
-3. Skip to "Configure the solution" below.
-
-### Option 2 - Install using Serverless Application Model (the manual way)
-
-If you'd rather install the application manually, you can use the AWS [Serverless Application Model](https://aws.amazon.com/serverless/sam/) (SAM) CLI to build and  deploy the application into your AWS account.
+### Install using Serverless Application Model
 
 #### Clone the solution respository
 
@@ -199,15 +189,13 @@ You can further customize the base API configuration as follows:
 
 ## Uninstalling the solution
 
-If you installed the application from the Serverless Application Repository, you can delete the application from the Lambda console in your AWS account (under Applications).
-
-Alternatively, if you installed the application using SAM, you can delete the application using the AWS CLI. Assuming you used the default application name for the stack name (`personalization-apis`), you can run the following:
+You can delete the application using the AWS CLI. Assuming you used the default application name for the stack name (`personalization-apis`), you can run the following:
 
 ```bash
 aws cloudformation delete-stack --stack-name personalization-apis
 ```
 
-Finally, you can also delete the stack in the AWS console on the CloudFormation page.
+Alternatively, you can also delete the stack in the AWS console on the CloudFormation page.
 
 ## Reporting issues
 

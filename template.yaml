@@ -6,11 +6,9 @@ Metadata:
   AWS::ServerlessRepo::Application:
     Name: Personalization-APIs
     Description: >
-      This project provides the components necessary for deploying low-latency real-time APIs that sit between your client applications
-      and recommenders. Key features include flexible/smart response caching, decorating recommender responses with the item metadata needed
-      to render them in your applications, seamless A/B testing across your recommenders, API authentication, automatic user context, user
-      event collection and fan out, and more.
-    Author: AWS
+      This project provides the components necessary for deploying low-latency real-time APIs between your client applications and
+      recommenders. Key features include response caching, decorating recommender responses, A/B testing, API authentication, and more.
+    Author: AWS Personalize SAs
     SpdxLicenseId: MIT-0
     LicenseUrl: LICENSE
     ReadmeUrl: README-SAR.md
