@@ -2,7 +2,7 @@
 
 Machine learning recommenders are an effective tool to enhance the user experience in client applications through personalized product and content recommendations. However, putting recommendations to work in client applications and keeping these recommenders updated in real-time with in-app user behavior often requires building and maintaining complicated middleware components between your client applications and recommenders. This project provides the components necessary for deploying low-latency real-time APIs that sit between your client applications and recommenders. Key features include flexible/smart response caching, decorating recommender responses with the item metadata needed to render them in your applications, seamless A/B testing across your recommenders, API authentication, automatic user context, user event collection and fan out, and more.
 
-![Personalization APIs Value Prop](./images/personalization-apis-value-prop.png)
+![Personalization APIs Value Prop](https://raw.githubusercontent.com/aws-samples/personalization-apis/main/images/personalization-apis-value-prop.png)
 
 Although the project is tightly integrated with [Amazon Personalize](https://aws.amazon.com/personalize/), an AI service from AWS that allows you to create custom ML recommenders based on your data, it supports backend integrations with personalization providers built with [Amazon SageMaker](https://aws.amazon.com/sagemaker/) (experimental), [AWS Lambda](https://aws.amazon.com/lambda/) (experimental), or HTTP endpoints. Key features include:
 
@@ -21,7 +21,7 @@ Although the project is tightly integrated with [Amazon Personalize](https://aws
 
 This solution provides opinionated architectures for common deployment scenarios. The following diagram illustrates the components deployed for an API architecture that utilizes OAuth2 for authentication, CloudFront for regional shared caches, and Amazon API Gateway for API management. The [API origin function](./src/personalization_api_function/main.py) is the heart of this solution.
 
-![Deployment Architecture OAuth2 Auth](./images/architecture-oauth2.png)
+![Deployment Architecture OAuth2 Auth](https://raw.githubusercontent.com/aws-samples/personalization-apis/main/images/architecture-oauth2.png)
 
 Additional deployment scenarios with alternative authenication and caching approaches are also supported. See the installation instructions below for details.
 
@@ -36,25 +36,25 @@ Depending on the deployment configuration selected, caching is automatically ena
 - Automatic support for HTTP cache validation through `ETag` response headers and `If-None-Match` request header inspection.
 - **The result is reduced latency and fewer calls to your origin recommenders.**
 
-See the [Caching](./docs/caching.md) documentation for details.
+See the [Caching](https://github.com/aws-samples/personalization-apis/blob/main/docs/caching.md) documentation for details.
 
 ## Item metadata
 
 Machine learning recommenders like [Amazon Personalize](https://aws.amazon.com/personalize/) often provide only a list of recommended item IDs in their inference responses. However, client applications need rich metadata for each item (e.g., name, description, price, category, image URL, detail URL, etc) to be able to render recommended items in their UIs. This solution provides the option to store item metadata either in a local database right where recommendations are retrieved or in [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) (very large item catalogs). Both options provide low-latency datastores to retrieve item metadata that is used to automatically decorate recommender responses before returning them to your applications. This capability allows you to focus more on displaying recommendations in your client applications rather than building undifferentiating middleware to merge item catalog information into your recommendation responses.
 
-See the [Item Metadata](./docs/item_metadata.md) documentation for details.
+See the [Item Metadata](https://github.com/aws-samples/personalization-apis/blob/main/docs/item_metadata.md) documentation for details.
 
 ## Fan-out incremental/streamed events
 
 The Personalization API's [/events](https://github.com/aws-samples/personalization-apis/blob/main/docs/api_entry_points.md#events) endpoint provides a distribution point to send events to any combination of Amazon Personalize event trackers, Amazon Kinesis Data Streams streams, and Amazon Kinesis Data Firehose delivery streams. Or you can have the API send events just to a Kinesis data stream and then configure your own consumers downstream from Kinesis. This allows you to persist clickstream data in datastores such as S3, OpenSearch, or Redshift and then build dashboards, perform deeper analysis, and more.
 
-See the [API entry points](./docs/api_entry_points.md) and [Configuration](./docs/configuration.md) documentation for details.
+See the [API entry points](https://github.com/aws-samples/personalization-apis/blob/main/docs/api_entry_points.md) and [Configuration](https://github.com/aws-samples/personalization-apis/blob/main/docs/configuration.md) documentation for details.
 
 ## Automatic context
 
 The current context of the end-user--their current device, current location, seasonality, and so on--can be extremely valuable signal to recommenders like Amazon Personalize. Contextual attributes allow recommendations to be personalized not only to the user's interest but also that are relevant to a moment in time. The Personalization APIs solution is able to derive user context based on intrinsic data available in the request and seamlessly pass that context to recommenders at inference and when new events are ingested. This relieves you from having to build logic into your client and server applications to derive and transmit contextual attributes.
 
-See the [Automatic context](./docs/auto_context.md) and [Configuration](./docs/configuration.md) documentation for details.
+See the [Automatic context](https://github.com/aws-samples/personalization-apis/blob/main/docs/auto_context.md) and [Configuration](https://github.com/aws-samples/personalization-apis/blob/main/docs/configuration.md) documentation for details.
 
 ## A/B testing
 
@@ -62,67 +62,19 @@ Deploying a recommender system is rarely a one-and-done project. It's an iterati
 
 The Personalization APIs solution is integrated with [Amazon CloudWatch Evidently](https://aws.amazon.com/blogs/aws/cloudwatch-evidently/), a new capability of CloudWatch that allows you to manage, deploy, and monitor A/B tests in your applications, and allows you to easily run your own A/B tests across different recommender implementations.
 
-See the [Experimentation](./docs/experimentation.md) documentation for details.
+See the [Experimentation](https://github.com/aws-samples/personalization-apis/blob/main/docs/experimentation.md) documentation for details.
 
 ## Configuration
 
 [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/) is used to manage the configuration for the solution. With AppConfig you can easily create, manage, and deploy configuration changes as well as set deployment strategies to control roll out, bake time, and rollback changes.
 
-At deployment time, you can have the project automatically generate a [configuration](./docs/configuration.md) based the recommenders, campaigns, and event trackers in one or more Amazon Personalize dataset groups in your AWS environment. This is a great way to save a lot of time setting up the foundation of your configuration. You can then take this base configuration and customize it further to suit your needs.
+At deployment time, you can have the project automatically generate a [configuration](https://github.com/aws-samples/personalization-apis/blob/main/docs/configuration.md) based the recommenders, campaigns, and event trackers in one or more Amazon Personalize dataset groups in your AWS environment. This is a great way to save a lot of time setting up the foundation of your configuration. You can then take this base configuration and customize it further to suit your needs.
 
-See the [Configuration](./docs/configuration.md) documentation for details.
+See the [Configuration](https://github.com/aws-samples/personalization-apis/blob/main/docs/configuration.md) documentation for details.
 
 ## Installing and configuring the solution
 
 ***IMPORTANT NOTE:** Deploying this solution in your AWS account will create and consume AWS resources, which will cost money. Therefore, if after installing this solution you choose not to use it as part of your recommender API strategy, be sure to follow the Uninstall instructions below to avoid ongoing charges and to clean up all data.*
-
-### Option 1 - Install from Serverless Application Repository (the easy way)
-
-The **easiest way to deploy this application** is from the [Serverless Application Repository](https://aws.amazon.com/serverless/serverlessrepo/) (SAR).
-
-1. Within the AWS account where you wish to deploy the application, browse to the [application's page](https://serverlessrepo.aws.amazon.com/applications/arn:aws:serverlessrepo:us-east-1:316031960777:applications~Personalization-APIs) in the Serverless Application Repository and click **"Deploy"**.
-2. Enter/update values in the **"Application settings"** panel (described below as "Deployment template parameters") and click **"Deploy"** again.
-3. Skip to "Configure the solution" below.
-
-### Option 2 - Install using Serverless Application Model (the manual way)
-
-If you'd rather install the application manually, you can use the AWS [Serverless Application Model](https://aws.amazon.com/serverless/sam/) (SAM) CLI to build and  deploy the application into your AWS account.
-
-#### Clone the solution respository
-
-```bash
-git clone git@github.com:aws-samples/personalization-apis.git
-```
-
-#### Install the solution
-
-This solution uses the AWS [Serverless Application Model](https://aws.amazon.com/serverless/sam/) (SAM) to build and deploy resources into your AWS account.
-
-To use the SAM CLI, you need the following tools locally installed.
-
-* SAM CLI - [Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
-* [Python 3 installed](https://www.python.org/downloads/)
-* Docker - [Install Docker community edition](https://hub.docker.com/search/?type=edition&offering=community)
-
-First, ensure you are logged in to `public.ecr.aws` in Docker so SAM can download the Docker build images, by running the following command.
-
-```bash
-aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-```
-
-To build and deploy the application for the first time, run the following in your shell:
-
-```bash
-cd personalization-apis
-sam build --use-container --cached
-sam deploy --guided
-```
-
-The `sam build --use-container --cached` command will build and package the source of the solution. The `sam deploy --guided` command will prompt you for deployment configuration information and ultimately deploy the solution to your AWS account. Be sure to deploy the solution in the same AWS region where your recommenders reside.
-
-> If you are asked multiple times to confirm `PersonalizationHttpApiFunction may not have authorization defined, Is this okay? [y/N]`, be sure to answer `y` to each one.
-
-### Deployment template parameters
 
 |Parameter name	|Type	|Valid values	|Default	|Description	|
 |---	|---	|---	|---	|---	|
@@ -153,11 +105,11 @@ The following table lays out the different deployment combinations with the reco
 
 ### Configure the solution
 
-The solution retrieves configuration details from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). When the solution is initally deployed, you can have it automatically generate a configuration based on the current Amazon Personalize resources in your account (see the `GenerateConfigDatasetGroupNames` template parameter above). Otherwise, a skeleton/empty configuration is created in AppConfig. Before the solution can serve responses from your recommenders, you must first update the skeleton configuration to match your recommender deployments. See the [configuration documentation](./docs/configuration.md) for details. The [samples](./samples) folder provides some minimal configurations that can help get you started.
+The solution retrieves configuration details from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). When the solution is initally deployed, a skeleton configuration is created in AppConfig. Before the solution can serve responses from your recommenders, you must first update the skeleton configuration to match your recommender deployments. See the [configuration documentation](https://github.com/aws-samples/personalization-apis/blob/main/docs/configuration.md) for details. The [samples](https://github.com/aws-samples/personalization-apis/blob/main/samples) folder provides some minimal configurations that can help get you started.
 
 ### Preparing and uploading your item metadata to S3
 
-Once your recommenders are configured in AppConfig, it's time to upload your item metadata to the S3 bucket created by the solution. The item metadata file contains the attributes of each item that are needed to render them in your client applications (e.g., item name, description, image URL, price, media URL, etc). Your item metadata file needs to be contained in a single JSON file in the [JSON Lines](https://jsonlines.org/) format. The solution will automatically detect when you upload your metadata file to the proper folder in the S3 bucket and load your metadata into the datastore setup in your configuration. Be sure to update and deploy your configuration with the appropriate item metadata configuration before uploading your item metadata. See the [item metadata documentation](./docs/item_metadata.md) for details.
+Once your recommenders are configured in AppConfig, it's time to upload your item metadata to the S3 bucket created by the solution. The item metadata file contains the attributes of each item that are needed to render them in your client applications (e.g., item name, description, image URL, price, media URL, etc). Your item metadata file needs to be contained in a single JSON file in the [JSON Lines](https://jsonlines.org/) format. The solution will automatically detect when you upload your metadata file to the proper folder in the S3 bucket and load your metadata into the datastore setup in your configuration. See the [item metadata documentation](https://github.com/aws-samples/personalization-apis/blob/main/docs/item_metadata.md) for details.
 
 ### Deploy OAuth2 edge authentication resources (**OAuth2-Cognito only!**)
 
@@ -171,7 +123,7 @@ sam build --use-container --cached --template-file template-edge.yaml && sam dep
 
 Alternatively, if your local system supports executing shell scripts, you can run the convenience shell script `deploy_edge_auth.sh` instead.
 
-Once deployment finishes successfully, sign in to the AWS console, switch to the `N. Virginia - us-east-1` region, browse to the Lambda service page, find the `EdgeAuthFunction`, and deploy it to the CloudFront distribution created in Step 2. See the [API authentication documentation](./docs/api_authentication.md) for details.
+Once deployment finishes successfully, sign in to the AWS console, switch to the `N. Virginia - us-east-1` region, browse to the Lambda service page, find the `EdgeAuthFunction`, and deploy it to the CloudFront distribution created in Step 2. See the [API authentication documentation](https://github.com/aws-samples/personalization-apis/blob/main/docs/api_authentication.md) for details.
 
 ### Testing the Personalization APIs
 
@@ -186,7 +138,7 @@ The root URL to use for testing your APIs depends on the deployment configuratio
 - If you deployed with `None` cache scheme:
     - Use the value of the `HttpApiEndpointUrl` CloudFormation output parameter from Step 2 as your API root URL (you can also find this URL in the AWS console for CloudFront)
 
-The remainder of the API URL path depends on the configuration you created in Step 3. See the [API entry points documentation](./docs/api_entry_points.md) for details.
+The remainder of the API URL path depends on the configuration you created in Step 3. See the [API entry points documentation](https://github.com/aws-samples/personalization-apis/blob/main/docs/api_entry_points.md) for details.
 
 ### Next steps
 
@@ -195,23 +147,21 @@ You can further customize the base API configuration as follows:
 - Add your own domain name and SSL certificate to the CloudFront distribution or API Gateway endpoint (**only if you deployed with the `API-Gateway-REST` API entry point type**).
 - Update the base CORS configuration to only allow requests from the origins of your client applications.
 - If you deployed with a configuration that includes CloudFront, you can protect the origin API endpoint (API Gateway) using AWS WAF that will prevent clients from calling API Gateway directly. Details [here](https://www.wellarchitectedlabs.com/security/300_labs/300_multilayered_api_security_with_cognito_and_waf/3_prevent_requests_from_accessing_api_directly/).
-- Setup [Provisioned Concurrency](https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html) for the [personalization_api_function](./src/personalization_api_function/). The ARN for this function can be found in the CloudFormation output parameters (either `PersonalizationHttpApiFunction` or `PersonalizationRestApiFunction` depending on your deployment options).
+- Setup [Provisioned Concurrency](https://docs.aws.amazon.com/lambda/latest/dg/provisioned-concurrency.html) for the [personalization_api_function](https://github.com/aws-samples/personalization-apis/blob/main/src/personalization_api_function/). The ARN for this function can be found in the CloudFormation output parameters (either `PersonalizationHttpApiFunction` or `PersonalizationRestApiFunction` depending on your deployment options).
 
 ## Uninstalling the solution
 
-If you installed the application from the Serverless Application Repository, you can delete the application from the Lambda console in your AWS account (under Applications).
-
-Alternatively, if you installed the application using SAM, you can delete the application using the AWS CLI. Assuming you used the default application name for the stack name (`personalization-apis`), you can run the following:
+To remove the resources created by this solution in your AWS account, use the AWS CLI. Assuming you used the default application name for the stack name (`personalization-apis`), you can run the following:
 
 ```bash
 aws cloudformation delete-stack --stack-name personalization-apis
 ```
 
-Finally, you can also delete the stack in the AWS console on the CloudFormation page.
+Alternatively, you can delete the stack in the AWS console on the CloudFormation page.
 
 ## Reporting issues
 
-If you encounter a bug, please create a new issue with as much detail as possible and steps for reproducing the bug. Similarly, if you have an idea for an improvement, please add an issue as well. Pull requests are also welcome! See the [Contributing Guidelines](./CONTRIBUTING.md) for more details.
+If you encounter a bug, please create a new issue with as much detail as possible and steps for reproducing the bug. Similarly, if you have an idea for an improvement, please add an issue as well. Pull requests are also welcome! See the [Contributing Guidelines](https://github.com/aws-samples/personalization-apis/blob/main/CONTRIBUTING.md) for more details.
 
 ## License summary
 

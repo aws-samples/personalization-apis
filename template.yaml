@@ -2,6 +2,23 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: (P13N-RT-APIS) - Real-time personalization APIs for recommendation systems
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: Personalization-APIs
+    Description: >
+      This project provides the components necessary for deploying low-latency real-time APIs that sit between your client applications
+      and recommenders. Key features include flexible/smart response caching, decorating recommender responses with the item metadata needed
+      to render them in your applications, seamless A/B testing across your recommenders, API authentication, automatic user context, user
+      event collection and fan out, and more.
+    Author: AWS
+    SpdxLicenseId: MIT-0
+    LicenseUrl: LICENSE
+    ReadmeUrl: README-SAR.md
+    Labels: ['Personalize', 'API-Gateway', 'CloudFront', 'Evidently', 'AppConfig', 'Cognito']
+    HomePageUrl: https://github.com/aws-samples/personalization-apis
+    SemanticVersion: 1.0.0
+    SourceCodeUrl: https://github.com/aws-samples/personalization-apis
+
 Parameters:
   ApplicationName:
     Type: String

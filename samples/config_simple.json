@@ -49,7 +49,7 @@
                 "rerank-items": {
                     "personalized-ranking": {
                         "variations": {
-                            "sims": {
+                            "ranking": {
                                 "type": "personalize-campaign",
                                 "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:campaign/[CAMPAIGN_NAME]"
                             }
