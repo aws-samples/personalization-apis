@@ -5,7 +5,8 @@
 #
 
 version: 0.2
-
+env:
+  shell: bash
 phases:
   install:
     commands:
@@ -14,8 +15,8 @@ phases:
   build:
     commands:
       - echo Entered the build phase...
-      - git clone https://github.com/aws-samples/personalization-apis
-      - cd personalization-apis/
+      - ls -lia
+      - chmod +x stage.sh
       - ./stage.sh template.yaml personalize-solution-staging-us-east-1 personalization-apis/
       - ./stage.sh template.yaml personalize-solution-staging-us-east-2 personalization-apis/
       - ./stage.sh template.yaml personalize-solution-staging-us-west-2 personalization-apis/
