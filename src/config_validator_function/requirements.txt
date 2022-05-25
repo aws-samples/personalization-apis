@@ -1,2 +1,2 @@
-# If jsonschema version is changed, before to test against sample schemas to make sure recursion errors in validator have been fixed.
+# If jsonschema version is changed, be sure to test against sample schemas to make sure recursion errors in validator have been fixed.
 jsonschema==3.2.0

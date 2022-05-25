@@ -76,19 +76,32 @@ See the [Configuration](./docs/configuration.md) documentation for details.
 
 ***IMPORTANT NOTE:** Deploying this solution in your AWS account will create and consume AWS resources, which will cost money. Therefore, if after installing this solution you choose not to use it as part of your recommender API strategy, be sure to follow the Uninstall instructions below to avoid ongoing charges and to clean up all data.*
 
-### Install using Serverless Application Model
+There are two options for installing this solution. The easiest and most convenient installation option is using CloudFormation directly. If your application and recommenders are hosted in one of the AWS regions listed in Option 1 below, click the "Launch Stack" button for the appropriate region. Otherwise, to install the solution in another AWS region, use Option 2.
 
+### Option 1: Install using CloudFormation (single-click, easiest)
+
+To support easy single-click deployments, this solution has been packaged and staged in the following regions. If your recommenders, such as Amazon Personalize resources, are hosted in one of these regions, it is recommended to use the appropriate "Launch Stack" button below. If your recommenders are in a different region, use Option 2.
+
+Region name | Region code | Launch
+--- | --- | ---
+US East (N. Virginia) | us-east-1 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://s3.amazonaws.com/personalize-solution-staging-us-east-1/personalization-apis/template.yaml&stackName=personalization-apis)
+US East (Ohio) | us-east-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/create/review?templateURL=https://s3-us-east-2.amazonaws.com/personalize-solution-staging-us-east-2/personalization-apis/template.yaml&stackName=personalization-apis)
+US West (Oregon) | us-west-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/create/review?templateURL=https://s3-us-west-2.amazonaws.com/personalize-solution-staging-us-west-2/personalization-apis/template.yaml&stackName=personalization-apis)
+Europe (Ireland) | eu-west-1 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/personalize-solution-staging-eu-west-1/personalization-apis/template.yaml&stackName=personalization-apis)
+Asia Pacific (Sydney) | ap-southeast-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/create/review?templateURL=https://s3-ap-southeast-2.amazonaws.com/personalize-solution-staging-ap-southeast-2/personalization-apis/template.yaml&stackName=personalization-apis)
+
+### Option 2: Install using Serverless Application Model (manual, custom)
+
+To manually install this solution or to install this solution into a region not listed under Option 1 above, perform the following steps to install using the AWS [Serverless Application Model](https://aws.amazon.com/serverless/sam/) (SAM) tool.
 #### Clone the solution respository
 
 ```bash
 git clone git@github.com:aws-samples/personalization-apis.git
 ```
 
-#### Install the solution
+#### Install the solution using SAM
 
-This solution uses the AWS [Serverless Application Model](https://aws.amazon.com/serverless/sam/) (SAM) to build and deploy resources into your AWS account.
-
-To use the SAM CLI, you need the following tools locally installed.
+To install using the SAM CLI, you need the following tools locally installed.
 
 * SAM CLI - [Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 * [Python 3 installed](https://www.python.org/downloads/)
@@ -114,17 +127,19 @@ The `sam build --use-container --cached` command will build and package the sour
 
 ### Deployment template parameters
 
+When installing using either option above, you are presented with several deployment parameters. These parameters control how the solution is configured to match your desired environment configuration.
+
 |Parameter name	|Type	|Valid values	|Default	|Description	|
 |---	|---	|---	|---	|---	|
-|ApplicationName | String | Alphanumeric | | Application name used to name AppConfig application. |
-|EnvironmentName | String | Alphanumeric | 'prod' | Application environment name (such as "dev", "staging", "prod", etc). Used for set the stage in API Gateway and to organize application configuration resources in AppConfig. |
-|TimeZone | String | Time zone name | 'UTC' | Initialize the solution's time zone to match your default local time zone. This is used as the default time zone if the user's time zone is not available when determining time-based automatic context. |
-|AuthenticationScheme | String | 'OAuth2-Cognito', 'ApiKey', or 'None' | 'OAuth2-Cognito' | Desired authentication scheme to protect API access. Note that "ApiKey" requires "API-Gateway-REST" for the API entry point type. If you select "OAuth2-Cognito", be sure to deploy the edge authentication template as well (must be done separately). |
+|ApplicationName | String | Alphanumeric | | Application name used to name AppConfig application. Enter a name that represents your application. |
+|EnvironmentName | String | Alphanumeric | 'prod' | Application environment name (such as "dev", "staging", "prod", etc). Used as the stage name in API Gateway and to organize application configuration resources in AppConfig. |
+|TimeZone | String | [Time zone name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones) | 'UTC' | Initialize the solution's time zone to match your default local time zone. This is used as the default time zone if the user's time zone is not available when determining time-based automatic context. |
+|AuthenticationScheme | String | 'OAuth2-Cognito', 'ApiKey', or 'None' | 'OAuth2-Cognito' | Desired authentication scheme to protect API access. Note that "ApiKey" requires "API-Gateway-REST" for the API entry point type. If you select "OAuth2-Cognito", be sure to deploy the edge authentication solution as well (must be done separately in us-east-1 only). |
 |CreateCognitoResources | String | 'Yes' or 'No' | 'Yes' | Create Amazon Cognito user pool and client that can be used to create OAuth2 tokens for API authentication. Only applicable when the authentication scheme is "OAuth2-Cognito". If you have an existing Cognito user pool, select "No".|
 |ApiEntryPointType | String | 'API-Gateway-HTTP' or 'API-Gateway-REST' | 'API-Gateway-HTTP' | API entry point type for requests that access the personalization APIs. "API-Gateway-REST" is recommended when the authentication scheme is "None" or "OAuth2-Cognito" for the best performance and lowest cost. |
 |CacheScheme | String | 'CloudFront', 'API-Gateway-Cache', 'Both', 'None' | 'CloudFront' | Caching scheme to deploy with the API entry point type. Note that using "API-Gateway-REST" for the API entry point type includes a CloudFront distribution that is transparently managed by API Gateway. However, this distribution does not include caching so you should select "API-Gateway-Cache" with "API-Gateway-REST".|
-|GenerateConfigDatasetGroupNames | String | Dataset group names or 'all' | | Specify one or more Amazon Personalize dataset group names or 'all' and a personalization APIs configuration will be automatically generated during deployment by checking the dataset groups for recommenders, campaigns, and event trackers. |
-|CreateSwaggerUI|String|'Yes' or 'No'|'Yes'|Create public [Swagger](https://swagger.io/) web UI that can be used to inspect and test APIs.|
+|GenerateConfigDatasetGroupNames | String | Dataset group names or 'all' | | Specify one or more Amazon Personalize dataset group names (separated by a comma) or 'all' and a personalization APIs configuration will be automatically generated during deployment by checking the dataset groups for recommenders, campaigns, and event trackers. |
+|CreateSwaggerUI|String|'Yes' or 'No'|'Yes'|Create **public** [Swagger](https://swagger.io/) web UI that can be used to inspect and test APIs.|
 
 ### Deployment combinations
 
@@ -153,21 +168,25 @@ Once your recommenders are configured in AppConfig, it's time to upload your ite
 
 **If you deployed the Personalization APIs solution with the `ApiKey` or `None` authentication scheme, you can skip this step.**
 
-In order to authenticate OAuth2 JWT tokens from Amazon Cognito, you must deploy the OAuth2 edge authentication resources. **These resources must be deployed into the `us-east-1` AWS region since they include a Lambda@Edge function that must be deployed to CloudFront (which can only be done from the `us-east-1` region).**
+In order to authenticate OAuth2 JWT tokens from Amazon Cognito within CloudFront, you must deploy the OAuth2 edge authentication resources. **These resources must be deployed into the `us-east-1` AWS region since they include a Lambda@Edge function that must be deployed to CloudFront (which can only be done from the `us-east-1` region).**
+
+You can install the OAuth2 edge resources into the us-east-1 region using the "Launch Stack" button below.
+
+[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://s3.amazonaws.com/personalize-solution-staging-us-east-1/personalization-apis-edge/template.yaml&stackName=personalization-apis-edge)
+
+If you'd rather install the OAuth2 edge resources manually using AWS SAM, execute the following commands at the command line (the `deploy_edge_auth.sh` shell script can also be used as a shortcut).
 
 ```bash
 sam build --use-container --cached --template-file template-edge.yaml && sam deploy --region us-east-1 --config-file samconfig-edge.toml --guided
 ```
 
-Alternatively, if your local system supports executing shell scripts, you can run the convenience shell script `deploy_edge_auth.sh` instead.
-
-Once deployment finishes successfully, sign in to the AWS console, switch to the `N. Virginia - us-east-1` region, browse to the Lambda service page, find the `EdgeAuthFunction`, and deploy it to the CloudFront distribution created in Step 2. See the [API authentication documentation](./docs/api_authentication.md) for details.
+Once deployment finishes successfully, sign in to the AWS console, switch to the `N. Virginia - us-east-1` region, browse to the Lambda service page, find the `EdgeAuthFunction`, and deploy it to the CloudFront distribution created when you installed the solution. See the [API authentication documentation](./docs/api_authentication.md) for details.
 
 ### Testing the Personalization APIs
 
 At this point you should be able to test the Personalization API endpoints. You can do this with a utility like [Swagger UI](https://swagger.io/), [Postman](https://www.postman.com/), or the cURL command. This solution automatically generates an [OpenAPI/Swagger](https://www.openapis.org/) specification file each time the application configuration is updated. You can find the generated OpenAPI spec file in the staging bucket under `/openapi/openapi.json`. If you deployed the solution with the `CreateSwaggerUI` parameter set to `Yes`, a public web UI endpoint was created that hosts the generated OpenAPI/Swagger specification. See the `SwaggerUI` CloudFormation output parameter for the URL to this endpoint. Otherwise, the generated OpenAPI/Swagger spec file can be downloaded from the staging bucket and imported into Postman.
 
-The root URL to use for testing your APIs depends on the deployment configuration you used in Step 2:
+The root URL to use for testing your APIs depends on the deployment configuration you selected when installing the solution:
 
 - If you deployed with the `API-Gateway-REST` API entry point type:
     - Use the value of the `RestApiEndpointUrl` CloudFormation output parameter from Step 2 as your API root URL (you can also find this URL in the AWS console for API Gateway)
@@ -177,6 +196,8 @@ The root URL to use for testing your APIs depends on the deployment configuratio
     - Use the value of the `HttpApiEndpointUrl` CloudFormation output parameter from Step 2 as your API root URL (you can also find this URL in the AWS console for CloudFront)
 
 The remainder of the API URL path depends on the configuration you created in Step 3. See the [API entry points documentation](./docs/api_entry_points.md) for details.
+
+Note that the Swagger UI already has the endpoint(s) configured.
 
 ### Next steps
 
@@ -189,13 +210,13 @@ You can further customize the base API configuration as follows:
 
 ## Uninstalling the solution
 
-You can delete the application using the AWS CLI. Assuming you used the default application name for the stack name (`personalization-apis`), you can run the following:
+The easiest way to uninstall/delete the solution is using the CloudFormation page in the AWS console. Just find the CloudFormation stack name you used to install the solution and click "Delete". Alternatively, you can use AWS CLI to delete the CloudFormation stack. Assuming you used the default application name for the stack name (`personalization-apis`), you can run the following command:
 
 ```bash
 aws cloudformation delete-stack --stack-name personalization-apis
 ```
 
-Alternatively, you can also delete the stack in the AWS console on the CloudFormation page.
+If you used a stack name other than `personalization-apis`, substitute your stack name in the command above.
 
 ## Reporting issues
 

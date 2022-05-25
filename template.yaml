@@ -3,19 +3,45 @@ Transform: AWS::Serverless-2016-10-31
 Description: (P13N-RT-APIS) - Real-time personalization APIs for recommendation systems
 
 Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: Personalization-APIs
-    Description: >
-      This project provides the components necessary for deploying low-latency real-time APIs between your client applications and
-      recommenders. Key features include response caching, decorating recommender responses, A/B testing, API authentication, and more.
-    Author: AWS Personalize SAs
-    SpdxLicenseId: MIT-0
-    LicenseUrl: LICENSE
-    ReadmeUrl: README-SAR.md
-    Labels: ['Personalize', 'API-Gateway', 'CloudFront', 'Evidently', 'AppConfig', 'Cognito']
-    HomePageUrl: https://github.com/aws-samples/personalization-apis
-    SemanticVersion: 1.0.0
-    SourceCodeUrl: https://github.com/aws-samples/personalization-apis
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: "Application name and environment parameters"
+        Parameters:
+          - ApplicationName
+          - EnvironmentName
+          - TimeZone
+      - Label:
+          default: "API configuration"
+        Parameters:
+          - AuthenticationScheme
+          - ApiEntryPointType
+          - CacheScheme
+          - CreateCognitoResources
+      - Label:
+          default: "Configuration and API testing support"
+        Parameters:
+          - GenerateConfigDatasetGroupNames
+          - CreateSwaggerUI
+    ParameterLabels:
+      ApplicationName:
+        default: "Application name"
+      EnvironmentName:
+        default: "Environment name"
+      TimeZone:
+        default: "Default time zone"
+      ApiEntryPointType:
+        default: "API entry point type"
+      AuthenticationScheme:
+        default: "Authentication scheme"
+      CacheScheme:
+        default: "Cache scheme"
+      CreateCognitoResources:
+        default: "Create Amazon Cognito resources?"
+      GenerateConfigDatasetGroupNames:
+        default: "Generate application configuration for Amazon Personalize dataset groups"
+      CreateSwaggerUI:
+        default: "Create Swagger UI?"
 
 Parameters:
   ApplicationName:
@@ -25,7 +51,7 @@ Parameters:
   EnvironmentName:
     Type: String
     Description: >
-      Application environment name (such as "dev", "staging", "prod", etc). Used for set the stage in API Gateway and to organize
+      Application environment name (such as "dev", "staging", "prod", etc). Used as the stage in API Gateway and to organize
       application configuration resources in AppConfig.
     Default: prod
 
@@ -40,7 +66,7 @@ Parameters:
     Type: String
     Description: >
       Desired authentication scheme to protect API access. Note that "ApiKey" requires "API-Gateway-REST" for the API entry point type.
-      If you select "OAuth2-Cognito", be sure to deploy the edge authentication template as well (must be done separately).
+      If you select "OAuth2-Cognito", be sure to deploy the edge authentication template as well (must be done separately, see repo documentation).
     AllowedValues:
       - 'OAuth2-Cognito'
       - 'ApiKey'
@@ -60,7 +86,7 @@ Parameters:
   ApiEntryPointType:
     Type: String
     Description: >
-      API entry point type for requests that access the personalization APIs. "API-Gateway-REST" is recommended when the authentication
+      API entry point type for requests that access the personalization APIs. "API-Gateway-HTTP" is recommended when the authentication
       scheme is "None" or "OAuth2-Cognito" for the best performance and lowest cost.
     AllowedValues:
       - 'API-Gateway-HTTP'
@@ -71,9 +97,9 @@ Parameters:
   CacheScheme:
     Type: String
     Description: >
-      Caching scheme to deploy with the API entry point type. Note that using "API-Gateway-REST" for the API entry point type
-      includes a CloudFront distribution that is transparently managed by API Gateway. However, this distribution does not include
-      caching so you should select "API-Gateway-Cache" with "API-Gateway-REST".
+      Cache scheme to deploy with the API entry point type. Note that using "API-Gateway-REST" for the API entry point type includes a CloudFront
+      distribution that is transparently managed by API Gateway. However, the CloudFront distribution included with "API-Gateway-REST" does not
+      include caching so you should select "API-Gateway-Cache" with "API-Gateway-REST".
     AllowedValues:
       - 'CloudFront'
       - 'API-Gateway-Cache'
@@ -85,15 +111,15 @@ Parameters:
     Type: String
     Description: >
       Comma separated list of Amazon Personalize dataset group names for which to generate an API configuration or 'all'
-      to generate a configuration for all dataset groups in the current region. Leave this value blank to skip generating an API
-      configuration.
+      to generate a configuration for all dataset groups in the region and account where this solution is deployed. Leave this value
+      blank to skip generating an API configuration.
     Default: ''
 
   CreateSwaggerUI:
     Type: String
     Description: >
-      Create interactive public Swagger UI web interface to test APIs. If 'Yes', this option will create a CloudFront distribution for
-      the staging bucket that loads the auto-generated OpenAPI/Swagger specification. This interface will be publicly accessible.
+      Create interactive public Swagger UI web interface to test and inspect APIs. If 'Yes', this option will create a CloudFront distribution for
+      the staging bucket that loads the auto-generated OpenAPI/Swagger specification. Note: this interface will be publicly accessible!
     AllowedValues:
       - 'Yes'
       - 'No'
