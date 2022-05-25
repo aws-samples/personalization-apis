@@ -1,0 +1,24 @@
+#
+# AWS Codebuild specifications
+# This file is only used for internal deployment of the code on each public commit
+# It is NOT needed if you're demoing or developping locally
+#
+
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - yum -y install git
+  build:
+    commands:
+      - echo Entered the build phase...
+      - git clone https://github.com/aws-samples/personalization-apis
+      - cd personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-us-east-1 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-us-east-2 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-us-west-2 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-eu-west-1 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-ap-southeast-2 personalization-apis/
+      - ./stage.sh template-edge.yaml personalize-solution-staging-us-east-1 personalization-apis-edge/
