@@ -80,332 +80,333 @@ class OpenApiGenerator:
         paths = {}
 
         for ns_name, ns_value in apis_config["namespaces"].items():
-            for action, recs in ns_value["recommenders"].items():
-                for rec_name, rec_value in recs.items():
+            if "recommenders" in ns_value:
+                for action, recs in ns_value["recommenders"].items():
+                    for rec_name, rec_value in recs.items():
 
-                    tag = { "name": f"{ns_value.get('name', ns_name)}: {action_name_map[action]}" }
-                    if rec_value.get('description'):
-                        tag['description'] = rec_value['description']
+                        tag = { "name": f"{ns_value.get('name', ns_name)}: {action_name_map[action]}" }
+                        if rec_value.get('description'):
+                            tag['description'] = rec_value['description']
 
-                    if not [t for t in tags if t.get('name') == tag["name"] ]:
-                        tags.append(tag)
+                        if not [t for t in tags if t.get('name') == tag["name"] ]:
+                            tags.append(tag)
 
-                    if action == "recommend-items":
-                        path = f"/{action}/{ns_name}/{rec_name}/{{user_id}}"
-                        paths[path] = {
-                            "get": {
-                                "tags": [ tag["name"] ],
-                                "description": rec_value.get("description", f"Recommend items for a user for the {ns_name} namespace"),
-                                "parameters": [
-                                    { "$ref": "#/components/parameters/userIdPath" },
-                                    { "$ref": "#/components/parameters/numResults" },
-                                    { "$ref": "#/components/parameters/filter" },
-                                    { "$ref": "#/components/parameters/filterValues" },
-                                    { "$ref": "#/components/parameters/context" },
-                                    { "$ref": "#/components/parameters/decorateItems" },
-                                    { "$ref": "#/components/parameters/syntheticUser" },
-                                    { "$ref": "#/components/parameters/feature" }
-                                ],
-                                "responses": {
-                                    "200": {
-                                        "description": "Successful",
-                                        "content": {
-                                            "application/json": {
-                                                "schema": {
-                                                    "$ref": "#/components/schemas/RecommendationResponse"
+                        if action == "recommend-items":
+                            path = f"/{action}/{ns_name}/{rec_name}/{{user_id}}"
+                            paths[path] = {
+                                "get": {
+                                    "tags": [ tag["name"] ],
+                                    "description": rec_value.get("description", f"Recommend items for a user for the {ns_name} namespace"),
+                                    "parameters": [
+                                        { "$ref": "#/components/parameters/userIdPath" },
+                                        { "$ref": "#/components/parameters/numResults" },
+                                        { "$ref": "#/components/parameters/filter" },
+                                        { "$ref": "#/components/parameters/filterValues" },
+                                        { "$ref": "#/components/parameters/context" },
+                                        { "$ref": "#/components/parameters/decorateItems" },
+                                        { "$ref": "#/components/parameters/syntheticUser" },
+                                        { "$ref": "#/components/parameters/feature" }
+                                    ],
+                                    "responses": {
+                                        "200": {
+                                            "description": "Successful",
+                                            "content": {
+                                                "application/json": {
+                                                    "schema": {
+                                                        "$ref": "#/components/schemas/RecommendationResponse"
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        "headers": {
-                                            "Age": {
-                                                "schema": {
-                                                    "type": "integer"
-                                                },
-                                                "description": "Contains the time in seconds the object was in a proxy cache"
                                             },
-                                            "ETag": {
-                                                "schema": {
-                                                    "type": "string"
+                                            "headers": {
+                                                "Age": {
+                                                    "schema": {
+                                                        "type": "integer"
+                                                    },
+                                                    "description": "Contains the time in seconds the object was in a proxy cache"
                                                 },
-                                                "description": "Uniquely identifies the response/resource"
-                                            },
-                                            "Cache-Control": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "ETag": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Uniquely identifies the response/resource"
                                                 },
-                                                "description": "HTTP caching control directive"
-                                            },
-                                            "Apigw-Requestid": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "Cache-Control": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "HTTP caching control directive"
                                                 },
-                                                "description": "Amazon API Gateway request identifier"
-                                            },
-                                            "X-Cache": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "Apigw-Requestid": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon API Gateway request identifier"
                                                 },
-                                                "description": "Uniquely identifies the response/resource"
-                                            },
-                                            "X-Amz-Cf-Pop": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Cache": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Uniquely identifies the response/resource"
                                                 },
-                                                "description": "Amazon CloudFront POP that request/response was routed through"
-                                            },
-                                            "X-Amz-Cf-Id": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Amz-Cf-Pop": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon CloudFront POP that request/response was routed through"
                                                 },
-                                                "description": "Amazon CloudFront identifier"
-                                            },
-                                            "X-Personalization-Config-Version": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Amz-Cf-Id": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon CloudFront identifier"
                                                 },
-                                                "description": "Personalization APIs configuration version"
+                                                "X-Personalization-Config-Version": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Personalization APIs configuration version"
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if auth_scheme == AUTH_SCHEME_API_KEY:
-                            paths[path]["get"]["responses"]["403"] = {
-                                "description": "API Key is invalid"
-                            }
-                        elif auth_scheme == AUTH_SCHEME_OAUTH2:
-                            paths[path]["get"]["responses"]["403"] = {
-                                "description": "Authorization is invalid"
-                            }
+                            if auth_scheme == AUTH_SCHEME_API_KEY:
+                                paths[path]["get"]["responses"]["403"] = {
+                                    "description": "API Key is invalid"
+                                }
+                            elif auth_scheme == AUTH_SCHEME_OAUTH2:
+                                paths[path]["get"]["responses"]["403"] = {
+                                    "description": "Authorization is invalid"
+                                }
 
-                    elif action == "related-items":
-                        path = f"/{action}/{ns_name}/{rec_name}/{{item_id}}"
-                        paths[path] = {
-                            "get": {
-                                "tags": [ tag["name"] ],
-                                "description": rec_value.get("description", f"Recommend related items for an item for the {ns_name} namespace"),
-                                "parameters": [
-                                    { "$ref": "#/components/parameters/itemIdPath" },
-                                    { "$ref": "#/components/parameters/userIdQuery" },
-                                    { "$ref": "#/components/parameters/numResults" },
-                                    { "$ref": "#/components/parameters/filter" },
-                                    { "$ref": "#/components/parameters/filterValues" },
-                                    { "$ref": "#/components/parameters/context" },
-                                    { "$ref": "#/components/parameters/decorateItems" },
-                                    { "$ref": "#/components/parameters/syntheticUser" },
-                                    { "$ref": "#/components/parameters/feature" }
-                                ],
-                                "responses": {
-                                    "200": {
-                                        "description": "Successful",
-                                        "content": {
-                                            "application/json": {
-                                                "schema": {
-                                                    "$ref": "#/components/schemas/RecommendationResponse"
+                        elif action == "related-items":
+                            path = f"/{action}/{ns_name}/{rec_name}/{{item_id}}"
+                            paths[path] = {
+                                "get": {
+                                    "tags": [ tag["name"] ],
+                                    "description": rec_value.get("description", f"Recommend related items for an item for the {ns_name} namespace"),
+                                    "parameters": [
+                                        { "$ref": "#/components/parameters/itemIdPath" },
+                                        { "$ref": "#/components/parameters/userIdQuery" },
+                                        { "$ref": "#/components/parameters/numResults" },
+                                        { "$ref": "#/components/parameters/filter" },
+                                        { "$ref": "#/components/parameters/filterValues" },
+                                        { "$ref": "#/components/parameters/context" },
+                                        { "$ref": "#/components/parameters/decorateItems" },
+                                        { "$ref": "#/components/parameters/syntheticUser" },
+                                        { "$ref": "#/components/parameters/feature" }
+                                    ],
+                                    "responses": {
+                                        "200": {
+                                            "description": "Successful",
+                                            "content": {
+                                                "application/json": {
+                                                    "schema": {
+                                                        "$ref": "#/components/schemas/RecommendationResponse"
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        "headers": {
-                                            "Age": {
-                                                "schema": {
-                                                    "type": "integer"
-                                                },
-                                                "description": "Contains the time in seconds the object was in a proxy cache"
                                             },
-                                            "ETag": {
-                                                "schema": {
-                                                    "type": "string"
+                                            "headers": {
+                                                "Age": {
+                                                    "schema": {
+                                                        "type": "integer"
+                                                    },
+                                                    "description": "Contains the time in seconds the object was in a proxy cache"
                                                 },
-                                                "description": "Uniquely identifies the response/resource"
-                                            },
-                                            "Cache-Control": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "ETag": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Uniquely identifies the response/resource"
                                                 },
-                                                "description": "HTTP caching control directive"
-                                            },
-                                            "Apigw-Requestid": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "Cache-Control": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "HTTP caching control directive"
                                                 },
-                                                "description": "Amazon API Gateway request identifier"
-                                            },
-                                            "X-Cache": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "Apigw-Requestid": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon API Gateway request identifier"
                                                 },
-                                                "description": "Uniquely identifies the response/resource"
-                                            },
-                                            "X-Amz-Cf-Pop": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Cache": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Uniquely identifies the response/resource"
                                                 },
-                                                "description": "Amazon CloudFront POP that request/response was routed through"
-                                            },
-                                            "X-Amz-Cf-Id": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Amz-Cf-Pop": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon CloudFront POP that request/response was routed through"
                                                 },
-                                                "description": "Amazon CloudFront identifier"
-                                            },
-                                            "X-Personalization-Config-Version": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Amz-Cf-Id": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon CloudFront identifier"
                                                 },
-                                                "description": "Personalization APIs configuration version"
+                                                "X-Personalization-Config-Version": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Personalization APIs configuration version"
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if auth_scheme == AUTH_SCHEME_API_KEY:
-                            paths[path]["get"]["responses"]["403"] = {
-                                "description": "API Key is invalid"
-                            }
-                        elif auth_scheme == AUTH_SCHEME_OAUTH2:
-                            paths[path]["get"]["responses"]["403"] = {
-                                "description": "Authorization is invalid"
-                            }
+                            if auth_scheme == AUTH_SCHEME_API_KEY:
+                                paths[path]["get"]["responses"]["403"] = {
+                                    "description": "API Key is invalid"
+                                }
+                            elif auth_scheme == AUTH_SCHEME_OAUTH2:
+                                paths[path]["get"]["responses"]["403"] = {
+                                    "description": "Authorization is invalid"
+                                }
 
-                    elif action == "rerank-items":
-                        path = f"/{action}/{ns_name}/{rec_name}/{{user_id}}/{{item_ids}}"
-                        paths[path] = {
-                            "get": {
-                                "tags": [ tag["name"] ],
-                                "description": rec_value.get("description", f"Rerank a list of items for a user for the {ns_name} namespace"),
-                                "parameters": [
-                                    { "$ref": "#/components/parameters/userIdPath" },
-                                    { "$ref": "#/components/parameters/itemIdsPath" },
-                                    { "$ref": "#/components/parameters/filter" },
-                                    { "$ref": "#/components/parameters/filterValues" },
-                                    { "$ref": "#/components/parameters/context" },
-                                    { "$ref": "#/components/parameters/decorateItems" },
-                                    { "$ref": "#/components/parameters/syntheticUser" },
-                                    { "$ref": "#/components/parameters/feature" }
-                                ],
-                                "responses": {
-                                    "200": {
-                                        "description": "Successful",
-                                        "content": {
-                                            "application/json": {
-                                                "schema": {
-                                                    "$ref": "#/components/schemas/RerankResponse"
+                        elif action == "rerank-items":
+                            path = f"/{action}/{ns_name}/{rec_name}/{{user_id}}/{{item_ids}}"
+                            paths[path] = {
+                                "get": {
+                                    "tags": [ tag["name"] ],
+                                    "description": rec_value.get("description", f"Rerank a list of items for a user for the {ns_name} namespace"),
+                                    "parameters": [
+                                        { "$ref": "#/components/parameters/userIdPath" },
+                                        { "$ref": "#/components/parameters/itemIdsPath" },
+                                        { "$ref": "#/components/parameters/filter" },
+                                        { "$ref": "#/components/parameters/filterValues" },
+                                        { "$ref": "#/components/parameters/context" },
+                                        { "$ref": "#/components/parameters/decorateItems" },
+                                        { "$ref": "#/components/parameters/syntheticUser" },
+                                        { "$ref": "#/components/parameters/feature" }
+                                    ],
+                                    "responses": {
+                                        "200": {
+                                            "description": "Successful",
+                                            "content": {
+                                                "application/json": {
+                                                    "schema": {
+                                                        "$ref": "#/components/schemas/RerankResponse"
+                                                    }
                                                 }
-                                            }
-                                        },
-                                        "headers": {
-                                            "Age": {
-                                                "schema": {
-                                                    "type": "integer"
-                                                },
-                                                "description": "Contains the time in seconds the object was in a proxy cache"
                                             },
-                                            "ETag": {
-                                                "schema": {
-                                                    "type": "string"
+                                            "headers": {
+                                                "Age": {
+                                                    "schema": {
+                                                        "type": "integer"
+                                                    },
+                                                    "description": "Contains the time in seconds the object was in a proxy cache"
                                                 },
-                                                "description": "Uniquely identifies the response/resource"
-                                            },
-                                            "Cache-Control": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "ETag": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Uniquely identifies the response/resource"
                                                 },
-                                                "description": "HTTP caching control directive"
-                                            },
-                                            "Apigw-Requestid": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "Cache-Control": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "HTTP caching control directive"
                                                 },
-                                                "description": "Amazon API Gateway request identifier"
-                                            },
-                                            "X-Cache": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "Apigw-Requestid": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon API Gateway request identifier"
                                                 },
-                                                "description": "Uniquely identifies the response/resource"
-                                            },
-                                            "X-Amz-Cf-Pop": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Cache": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Uniquely identifies the response/resource"
                                                 },
-                                                "description": "Amazon CloudFront POP that request/response was routed through"
-                                            },
-                                            "X-Amz-Cf-Id": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Amz-Cf-Pop": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon CloudFront POP that request/response was routed through"
                                                 },
-                                                "description": "Amazon CloudFront identifier"
-                                            },
-                                            "X-Personalization-Config-Version": {
-                                                "schema": {
-                                                    "type": "string"
+                                                "X-Amz-Cf-Id": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Amazon CloudFront identifier"
                                                 },
-                                                "description": "Personalization APIs configuration version"
+                                                "X-Personalization-Config-Version": {
+                                                    "schema": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": "Personalization APIs configuration version"
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if auth_scheme == AUTH_SCHEME_API_KEY:
-                            paths[path]["get"]["responses"]["403"] = {
-                                "description": "API Key is invalid"
-                            }
-                        elif auth_scheme == AUTH_SCHEME_OAUTH2:
-                            paths[path]["get"]["responses"]["403"] = {
-                                "description": "Authorization is invalid"
-                            }
+                            if auth_scheme == AUTH_SCHEME_API_KEY:
+                                paths[path]["get"]["responses"]["403"] = {
+                                    "description": "API Key is invalid"
+                                }
+                            elif auth_scheme == AUTH_SCHEME_OAUTH2:
+                                paths[path]["get"]["responses"]["403"] = {
+                                    "description": "Authorization is invalid"
+                                }
 
-                        path = f"/{action}/{ns_name}/{rec_name}/{{user_id}}"
-                        paths[path] = {
-                            "post": {
-                                "tags": [ tag["name"] ],
-                                "description": rec_value.get("description", f"Rerank a list items for a user for {ns_name}"),
-                                "parameters": [
-                                    { "$ref": "#/components/parameters/userIdPath" },
-                                ],
-                                "requestBody": {
-                                    "description": "List of item IDs to rerank for `user_id`",
-                                    "content": {
-                                        "application/json": {
-                                            "schema": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "string"
+                            path = f"/{action}/{ns_name}/{rec_name}/{{user_id}}"
+                            paths[path] = {
+                                "post": {
+                                    "tags": [ tag["name"] ],
+                                    "description": rec_value.get("description", f"Rerank a list items for a user for {ns_name}"),
+                                    "parameters": [
+                                        { "$ref": "#/components/parameters/userIdPath" },
+                                    ],
+                                    "requestBody": {
+                                        "description": "List of item IDs to rerank for `user_id`",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
                                                 }
                                             }
-                                        }
+                                        },
+                                        "required": True
                                     },
-                                    "required": True
-                                },
-                                "responses": {
-                                    "200": {
-                                        "description": "Successful",
-                                        "content": {
-                                            "application/json": {
-                                                "schema": {
-                                                    "$ref": "#/components/schemas/RerankResponse"
+                                    "responses": {
+                                        "200": {
+                                            "description": "Successful",
+                                            "content": {
+                                                "application/json": {
+                                                    "schema": {
+                                                        "$ref": "#/components/schemas/RerankResponse"
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
-                        }
 
-                        if auth_scheme == AUTH_SCHEME_API_KEY:
-                            paths[path]["post"]["responses"]["403"] = {
-                                "description": "API Key is invalid"
-                            }
-                        elif auth_scheme == AUTH_SCHEME_OAUTH2:
-                            paths[path]["post"]["responses"]["403"] = {
-                                "description": "Authorization is invalid"
-                            }
+                            if auth_scheme == AUTH_SCHEME_API_KEY:
+                                paths[path]["post"]["responses"]["403"] = {
+                                    "description": "API Key is invalid"
+                                }
+                            elif auth_scheme == AUTH_SCHEME_OAUTH2:
+                                paths[path]["post"]["responses"]["403"] = {
+                                    "description": "Authorization is invalid"
+                                }
 
             if "eventTargets" in ns_value:
                 tag = { "name": f"{ns_value.get('name', ns_name)}: Events" }
