@@ -15,7 +15,6 @@ phases:
   build:
     commands:
       - echo Entered the build phase...
-      - ls -lia
       - chmod +x stage.sh
       - ./stage.sh template.yaml personalize-solution-staging-us-east-1 personalization-apis/
       - ./stage.sh template.yaml personalize-solution-staging-us-east-2 personalization-apis/

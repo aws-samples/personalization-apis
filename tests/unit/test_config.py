@@ -89,6 +89,21 @@ def config_cache_inheritance():
     }
 
 @fixture
+def config_no_recommenders():
+    return {
+        "namespaces": {
+            "ns-1": {
+                "eventTargets": [
+                    {
+                        "type": "personalize-event-tracker",
+                        "trackingId": "[TRACKING_ID]"
+                    }
+                ]
+            }
+        }
+    }
+
+@fixture
 def obj():
     obj = AppConfigPersonalizationConfig.__new__(AppConfigPersonalizationConfig)
     return obj
@@ -125,3 +140,9 @@ def test_cache_inheritance(obj, config_cache_inheritance):
     assert rec_config['cacheControl']['userSpecified']['maxAge'] == 60
     rec_config = obj.get_recommender_config('ns-inherit-2', 'similar', 'related-items')
     assert rec_config['cacheControl']['userSpecified']['maxAge'] == 10
+
+def test_no_recommenders(obj, config_no_recommenders):
+    obj.get_config = MagicMock(return_value = config_no_recommenders)
+    ns_config = obj.get_namespace_config('ns-1')
+    assert not 'recommenders' in ns_config
+    assert len(ns_config['eventTargets']) == 1

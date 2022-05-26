@@ -159,6 +159,7 @@ def create_and_deploy_hosted_config(config: Dict):
     """ Creates and deploys a configuration to AppConfig as a hosted configuration version """
 
     logger.info('Creating hosted configuration...')
+    logger.debug(config)
     response = appconfig.create_hosted_configuration_version(
         ApplicationId = appconfig_application_id,
         ConfigurationProfileId = appconfig_config_profile_id,
@@ -187,7 +188,10 @@ def create_and_deploy_hosted_config(config: Dict):
 def generate_and_deploy_config(dataset_group_names_prop: str):
     if dataset_group_names_prop.strip():
         config = generate_api_config(dataset_group_names_prop)
-        create_and_deploy_hosted_config(config)
+        if len(config['namespaces']) > 0:
+            create_and_deploy_hosted_config(config)
+        else:
+            logger.warning('No namespaces discovered in current acccount/region')
     else:
         logger.info('Dataset group name(s) not specified; skipping generation of configuration')
 

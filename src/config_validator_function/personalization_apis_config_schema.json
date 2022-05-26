@@ -35,7 +35,6 @@
                 "^[a-zA-Z0-9_-]*$": {
                     "type": "object",
                     "description": "Namespace configuration that contains one or more recommenders.",
-                    "required": [ "recommenders" ],
                     "properties": {
                         "name": {
                             "type": "string",
@@ -106,6 +105,10 @@
                             }
                         }
                     },
+                    "anyOf": [
+                        { "required": [ "recommenders" ] },
+                        { "required": [ "eventTargets" ] }
+                    ],
                     "additionalProperties": false
                 }
             },
