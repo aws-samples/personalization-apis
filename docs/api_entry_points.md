@@ -1,6 +1,6 @@
 # Personalization API entry points
 
-The API entry points have consistent and predictable paths based on your [configuration](./configuration.md). Since entry point paths are resolved dynamically for each request based on your configuration, an update to your configuration will be reflected in the API entry points after your configuration is deployed via [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/) **and** the API functions reload their configuration (every 45 seconds, by default).
+The API entry points have consistent and predictable paths based on your [configuration](./configuration.md). Since entry point paths are resolved dynamically for each request based on your configuration, an update to your configuration will be reflected in the API entry points after your configuration is deployed via [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/) **and** the API functions have reloaded their configuration (every 45 seconds, by default).
 
 ## OpenAPI/Swagger specification
 
@@ -8,6 +8,20 @@ Each time the application [configuration](./configuration.md) is deployed in App
 
 ![Personalization APIs Postman](../images/postman.png)
 ![Personalization APIs Swagger Editor](../images/swagger_editor.png)
+
+## Host names
+
+The OpenAPI specification file generated above will automatically include the host names for CloudFront (if configured) and API Gateway for your deployment. These host names are also provided as CloudFormation output parameters as described below.
+
+- If you deployed with the `API-Gateway-REST` API entry point type:
+    - Use the value of the `RestApiEndpointUrl` CloudFormation output parameter as your API root URL (you can also find this URL in the AWS console for API Gateway)
+- If you deployed with `CloudFront` or `Both` cache scheme:
+    - Use the value of the `ApiCdnUrl` CloudFormation output parameter as your API root URL (you can also find this URL in the AWS console for CloudFront)
+- If you deployed with `None` cache scheme:
+    - Use the value of the `HttpApiEndpointUrl` CloudFormation output parameter as your API root URL (you can also find this URL in the AWS console for CloudFront)
+
+You can optionally setup your own domain name and SSL certifications for these endpoints. See the CloudFront and API Gateway documentation for detailed instructions.
+
 ## Inference entry points
 
 The inference entry points provide recommendations (inference) based on an API action, namespace, recommender, and action-specific required path parameters.
@@ -36,9 +50,9 @@ This entry point returns item recommendations for a specific user.
 
 #### Examples
 
-The example below assume the following simple configuration that includes one namespace (`my-store`) with one recommender (`recommended-for-you`) for the `recommend-items` API action type and one variation:
+The example below assume the following simple configuration that includes one namespace (`my-store`) with one recommender (`recommended-for-you`) for the `recommend-items` API action type and one variation that resolves to an Amazon Personalize campaign:
 
-```javascript
+```json
 {
     "namespaces": {
         "my-store": {
@@ -65,11 +79,11 @@ The example below assume the following simple configuration that includes one na
 }
 ```
 
-URI path to get item recommendations for user `1234` from the above configuration:
+The GET URI path to get item recommendations for user `1234` from the above configuration would look like this:
 
 `GET /recommend-items/my-store/recommended-for-you/1234`
 
-The URI path starts with the API action type (`recommend-items`), then the namespace (`my-store`), then the recommender (`recommended-for-you`), and then finally the user ID (`1234`). Additional optional parameters, such as `numResults`, could be added as query string parameters. Note too that there is a filter defined in the configuration. When a filter is declared in the configuration, it is automatically applied to `GetRecommendations` calls for the recommender variation.
+The URI path starts with the API action type (`recommend-items`), then the namespace (`my-store`), then the recommender (`recommended-for-you`), and then finally the user ID (`1234`). Additional optional parameters, such as `numResults`, could be added as query string parameters. Note too that there is a filter defined in the configuration above. When a filter is declared in the configuration, it is automatically applied to `GetRecommendations` calls for the recommender variation. If the `filter` parameter is specified in the query string, it will override the filter(s) specified in the configuration.
 
 ### Related items API action
 
@@ -108,7 +122,7 @@ The HTTP `GET` variation of this entry point is recommended since its responses 
 
 If the `POST` variation is used, the request Content-Type should be `application/json` and the body of the request must be a JSON string array of the item IDs to rerank. For example:
 
-```javascript
+```json
 [ "item_1", "item_2", "item_3" ]
 ```
 
@@ -140,7 +154,7 @@ The events entry point allows new user events/interactions and A/B test conversi
 
 The request Content-Type should be `application/json` and the body of the request must be a JSON document that conforms to the following format (which is modeled on and extends the Amazon Personalize [PutEvents](https://docs.aws.amazon.com/personalize/latest/dg/API_UBS_PutEvents.html) API request format).
 
-```javascript
+```json
 {
    "sessionId": "string",
    "userId": "string",
@@ -169,7 +183,7 @@ The request Content-Type should be `application/json` and the body of the reques
 
 **Notable differences from and extensions to the Amazon Personalize [PutEvents](https://docs.aws.amazon.com/personalize/latest/dg/API_UBS_PutEvents.html) API request format**
 
-- `trackingId` is not required in the request body but is instead derived from the event targets specified in the Personalization APIs [configuration](./configuration.md). This allows you to fan-out events to multiple Personalize event trackers for different Personalize dataset groups, if necessary.
+- `trackingId` is not required in the request body but is instead derived from the event targets specified in the Personalization APIs [configuration](./configuration.md). This allows you to fan-out events to multiple Personalize event trackers, say, to different Personalize dataset groups that use the same/similar interactions dataset schema.
 - `eventList`: events to track for the `userId`:
     - `eventList[].properties`: specifies interaction context fields and values (optional). If [automatic context](./auto_context.md) rules are configured, the Personalization APIs will automatically derive context from the request and build/blend the context values into the `properties` field value before sending to configured event targets.
 - `experimentConversions` includes experiment conversions for the user (optional):
@@ -177,6 +191,6 @@ The request Content-Type should be `application/json` and the body of the reques
     - `experimentConversions[].feature`: feature name for the experiment for the conversion (optional but recommended). If not specified, the first experiment for the recommender in the configuration will be used to log the conversion event. If you are running multiple experiments for the same recommender, you should specify the feature name when retrieving recommendations and logging conversion events.
     - `experimentConversions[].metric`: metric name to attribute the conversion event value to.
     - `experimentConversions[].value`: conversion event value that is used as the Evidently metric value (optional). Defaults to 1.0 if not specified.
-- `eventList` and `experimentConversions` are both optional but at least one should be included in the request. Therefore, you can use both or either in the same request.
+- `eventList` and `experimentConversions` are both optional but at least one must be included in the request. Therefore, you can use both or either in the same request.
 
 See the Amazon Personalize [PutEvents](https://docs.aws.amazon.com/personalize/latest/dg/API_UBS_PutEvents.html) API documentation for details on all other properties of the payload.

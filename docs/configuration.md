@@ -1,8 +1,8 @@
 # Personalization APIs Configuration
 
-The Personalization APIs solution operates based on a configuration stored in [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). The configuration is specified in a hosted JSON profile in AppConfig and includes all of the settings that control the APIs. Within the configuration you can setup one or more namespaces (analagous to an application, a Personalize domain, or a Personalize custom dataset group).
+The Personalization APIs solution operates based on a hosted configuration stored in [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/). The configuration is specified in a hosted JSON profile in AppConfig and includes all of the settings that control the APIs' behavior. Within the configuration you can setup one or more namespaces (analagous to an application, a Personalize domain, or a Personalize custom dataset group).
 
-At deployment time, you can have the project automatically generate a configuration based the recommenders, campaigns, and event trackers in one or more Amazon Personalize dataset groups in your AWS environment. This is a great way to save a lot of time setting up the foundation of your configuration. You can then take this base configuration and customize it further to suit your needs.
+At deployment time, you can have the project automatically generate a configuration based the recommenders, campaigns, and event trackers in one or more Amazon Personalize dataset groups in your AWS environment. This is a great way to save time setting up the foundation of your configuration. You can then take this base configuration and customize it further to suit your needs.
 
 ## OpenAPI/Swagger specification
 
@@ -10,10 +10,10 @@ Each time the application [configuration](./configuration.md) is deployed in App
 
 ## Primary concepts
 
-- **Configuration** - there is a single configuration definition that is represented in JSON and stored as a hosted configuration profile in AWS AppConfig. A configuration skeleton is automatically created by the Personalization APIs solution deployment that you can quickly update to match your environment.
+- **Configuration** - there is a single configuration definition that is represented in JSON and stored as a hosted configuration profile in AWS AppConfig. A configuration can be automatically generated at deployment based on Amazon Personalize resources already in your account. Otherwise, a skeleton configuration is created that you can quickly update to match your environment.
 - **Namespace** - a logical construct within the configuration that can be used to organize recommenders at an application or dataset group level. One or more namespaces can be defined in the configuration.
 - **Recommender** - a logical provider of recommendations for a specific use case within a namespace. One or more recommenders can be defined for a namespace.
-- **Variation** - the definition for an actual implementation of a recommender. One or more variations can be defined for a recommender. Multiple variations are used with A/B tests.
+- **Variation** - the definition for an actual implementation of a recommender. One or more variations can be defined for a recommender. For example, multiple variations are used with A/B tests.
 - **Event target** - a destination or sink for events/interactions that are streamed to the events entry point for a namespace. One or more event targets can be defined for a namespace.
 
 ![Configuration Concepts](../images/configuration-concepts.png)
@@ -24,13 +24,13 @@ A logical construct within the configuration that can be used to organize recomm
 
 Here is an example of a configuration that defines three different applications as separate namespaces. The keys within `namespace` uniquely identify each namespace where the key value is used to map an API request to a namespace. See the [API entry points](./api_entry_points.md) documentation for details on API URI mapping to namespaces and recommenders.
 
-```javascript
+```json
 {
     "namespaces": {
         "my-app-1": {
         },
         "my-app-2": {
-        }
+        },
         "my-app-3": {
         }
     }
@@ -43,7 +43,7 @@ A logical provider of recommendations for a specific use case within a namespace
 
 Here is an example of a single namespace configuration for `my-app-1` that has three recommenders defined for all three supported API action types (`recommend-items`, `related-items`, and `rerank-items`). Under each API action type, one or more recommenders can be defined where the key uniquely identifies the recommender within the namespace. You define this key and it is used to map API requests to a recommender. See the [API entry points](./api_entry_points.md) documentation for details on API URI mapping to namespaces and recommenders.
 
-```javascript
+```json
 {
     "namespaces": {
         "my-app-1": {
@@ -72,7 +72,7 @@ The definition for an actual implementation of a recommender. One or more variat
 
 Here is an example of a single namespace configuration for `my-app-1` that has a single `recommend-items` recommender with the key `my-recommended-for-you`. This recommender has a single variation with the key `my-user-personalization` that is a Personalize campaign.
 
-```javascript
+```json
 {
     "namespaces": {
         "my-app-1": {
@@ -127,7 +127,7 @@ See the [experimentation](./experimentation.md) documentation for details.
 
 An Amazon Personalize filter that should be automatically applied to the `GetRecommendations`/`GetPersonalizedRanking` API call to a Personalize campaign/recommender.
 
-```javascript
+```json
 {
     "namespaces": {
         "my-app-1": {
@@ -137,7 +137,7 @@ An Amazon Personalize filter that should be automatically applied to the `GetRec
                         "variations": {
                             "my-user-personalization": {
                                 "type": "personalize-campaign",
-                                "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:campaign/[CAMPAIGN_NAME]"
+                                "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:campaign/[CAMPAIGN_NAME]",
                                 "filters": [{
                                     "arn": "arn:aws:personalize:[REGION]:[ACCOUNT]:filter/[FILTER_NAME]"
                                 }]
@@ -157,11 +157,11 @@ An Amazon Personalize filter that should be automatically applied to the `GetRec
 
 ### Event targets
 
-Destinations or sinks for events/interactions that are streamed to the events entry point for a namespace. One or more event targets can be defined for a namespace. This configuration is quite flexible. You can have the Personalization APIs solution send events directly to multiple event targets or you can setup a Kinesis data stream as a single event target and then build/configure consumers on that Kinesis stream in Kinesis.
+Destinations or sinks for events/interactions that are streamed to the events entry point for a namespace. One or more event targets can be defined for a namespace. This configuration is quite flexible. You can have the Personalization APIs solution send events directly to multiple event targets or you can setup a Kinesis data stream as a single event target and then build/configure consumers on that Kinesis stream in Kinesis to fan out events from there.
 
 Here is an example of a namespace that has a single event target that is a Personalize event tracker.
 
-```javascript
+```json
 {
    "namespaces": {
         "my-app-1": {
@@ -195,9 +195,9 @@ Note: Only events are sent to event trackers. Experiment conversion events are n
 
 ### Cache control
 
-Controls how the Personalization APIs manage caching. The `cacheControl` element can be defined at multiple layers to create an inheritance effect. For example, create a top-level `cacheControl` that defines default caching that should be used across all namespaces. If you want to define different cache control at the recommender level, you can add another `cacheControl` element at the recommender level.
+Controls how the Personalization APIs manage caching. The `cacheControl` element can be defined at multiple levels to create an inheritance effect. For example, create a top-level `cacheControl` that defines default caching that should be used across all namespaces. If you want to define different cache control at the recommender level, you can add another `cacheControl` element at the recommender level.
 
-```javascript
+```json
 {
     "cacheControl": {
         "autoProvision": true,
@@ -219,7 +219,7 @@ Controls how the Personalization APIs manage caching. The `cacheControl` element
 }
 ```
 
-- `cacheControl.autoProvision`: boolean field that controls whether the Personalization APIs should auto provision/configure cache settings within CloudFront and API Gateway.
+- `cacheControl.autoProvision`: boolean field that controls whether the Personalization APIs should auto provision/configure cache settings within CloudFront and API Gateway when the configuration changes.
 - `cacheControl.userSpecified.maxAge`: integer field that controls the maximum number of seconds (TTL) that responses should be cached when a user has been specified on the request.
 - `cacheControl.userSpecified.directives`: [HTTP CacheControl cache directives](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) to include in the `Cache-Control` response header for user specific requests.
 - `cacheControl.syntheticUserSpecified.maxAge`: integer field that controls the maximum number of seconds (TTL) that responses should be cached when a synthetic user has been specified on the request. Synthetic user IDs represent a logical group/cohort of users such as marketing leads for a marketing campaign.
@@ -237,13 +237,13 @@ API entry points are grouped into inference entry points (entry points that prov
 
 ## Deploying configurations
 
-The process of deploying your configuration involves building your configuration JSON according to the documentation on this page. Once you JSON is ready, you can deploy it to the Personalization APIs by updating the hosted configuration. This can be done programmatically using the AWS AppConfig SDK/CLI or in the AWS console.
+The process of deploying your configuration involves building your configuration JSON according to the documentation on this page. Once your JSON is ready, you can deploy it to the Personalization APIs by updating the hosted configuration in AppConfig. This can be done programmatically using the AWS AppConfig SDK/CLI or in the AWS console.
 
 ![AppConfig Deploy](../images/config-create.png)
 
 Once deployment has been initiated, the Personalization APIs deployed Lambda functions will pick up the new configuration within 45 seconds. You can identify that the new configuration is being used by inspecting the `X-Personalization-Config-Version` response header. This header's value echoes the `version` field value from the configuration.
 
-```javascript
+```json
 {
     "version": "10",
     "namespaces": {
@@ -251,6 +251,12 @@ Once deployment has been initiated, the Personalization APIs deployed Lambda fun
     }
 }
 ```
+
+For the above configuration, every API response will have a response header like this:
+
+`X-Personalization-Config-Version: 10`
+
+By changing the version in your configuration each time you make a change, you can verify that it has been deployed by checking this response header.
 
 ### Configuration caching
 

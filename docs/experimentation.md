@@ -7,13 +7,36 @@ Support for A/B testing recommender strategies is built-in to the Personalizatio
 - [Create a project](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Evidently-newproject.html) in Evidently for your application.
 - [Add a feature](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Evidently-newfeature.html) to your project representing the personalization use-case in your application. This can be a UI control or widget where you're displaying personalized recommendations.
     - Your feature can have one or more variations. To test different personalization recommenders for this feature, create a string type variation for each recommender that you want to test. For the variation value, enter a unique name for each variation for the feature. The name should be alphanumeric.
+    - You will use the variation values from the Evidently feature configuration in the Personalization APIs configuration. This is how the Personalization APIs will map the output of Evidently's [EvaluateFeature](https://docs.aws.amazon.com/cloudwatchevidently/latest/APIReference/API_EvaluateFeature.html) API response to the appropriate variation in the API configuration.
 - [Create an experiment](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Evidently-newexperiment.html) for the feature.
+    - For the Evidently experiment's metrics, you will map the metric name as well as it's `entityIdKey` and `valueKey` in the Personalization APIs configuration (see below).
+
+For example, a metric definition for tracking product clicks for click-through-rate for an experiment might look like this in Evidently.
+
+```json
+{
+  "entityIdKey": "userDetails.userId",
+  "valueKey": "details.productClicked",
+  "eventPattern": {
+    "userDetails.userId": [
+      {
+        "exists": true
+      }
+    ],
+    "details.productClicked": [
+      {
+        "exists": true
+      }
+    ]
+  }
+}
+```
 
 ## Step 2: Setup the recommender variations in your Personalization APIs configuration
 
-Next, take the details of the project, feature, variations, and experiment to your Personalization APIs configuration. Below is an example configuration that defines an experiment with two variations that tests a related items recommender trained with the Personalize SIMS recipe against the a recommender trained with the Similar-Items recipe. Under `experiments` you can define one or more features where they key is the feature name from your Evidently experiment (`product-detail-view` in this case). Under `metrics`, the metric name (`productDetailRecClicked`) must match the metric name you setup in Evidently for your experiment and the `entityIdKey` and `valueKey` matches the corresponding metric settings for your experiment. The variation names are `sims` and `similar-items` and these must match the variation string values for the feature of the experiment.
+Next, take the details of the Evidently project, feature, variations, and experiment created above to your Personalization APIs configuration. Below is an example configuration that defines an experiment with two variations that tests a related items recommender trained with the Personalize SIMS recipe against a recommender trained with the Similar-Items recipe. Under `experiments` you can define one or more features where the key is the feature name from your Evidently experiment (`product-detail-view` in this case). Under `metrics`, the metric name (`productDetailRecClicked`) must match the metric name you setup in Evidently for your experiment and the `entityIdKey` and `valueKey` matches the corresponding metric settings for your experiment (see metric definition above). The `trackExposures` field instructs the Personalization APIs endpoint to call the Evidently `PutProjectEvents` API to track variation exposures (this is needed for CTR tracking). The variation names are `sims` and `similar-items` and these must match the variation string values for the feature of the experiment in Evidently.
 
-```javascript
+```json
 {
     "namespaces": {
         "my-store": {
@@ -67,7 +90,7 @@ When a user converts for an experiment variation, you can include details on the
 
 `POST /events/{namespace}`
 
-```javascript
+```json
 {
    "userId": "12",
    "experimentConversions": [
@@ -79,4 +102,3 @@ When a user converts for an experiment variation, you can include details on the
     ]
 }
 ```
-

@@ -38,7 +38,7 @@ Automatic context mappings for interactions/events and inference calls are speci
 
 Here is an example that populates a `deviceType` field with the value of `Desktop`, `Phone`, `TV`, or `Tablet` depending value of the corresponding CloudFront header. An optional `default` value can be specified that is used when none of automatic context rules evaluate to true. Note that `evaluateAll` property controls whether all rules are evaluated (`true`) or whether evaluation stops at the first rule that is matched (`false`).
 
-```javascript
+```json
 {
     "namespaces": {
         "my-store": {
@@ -106,7 +106,7 @@ Time-based context uses the current time in the user's current time zone to fiel
 
 The following example populates a `timeOfDay` field based on the current hour of the day in the user's time zone. The hour value 0-23 can be used with value mapping expressions to map ranges of values to the desired categorical value. In the following example, 10pm-3am is `Night`, 4am-10am is `Morning`, 11am-5pm is `Afternoon`, and 6pm-9pm is `Evening`. Note that since the `evaluateAll` field is set to `false`, rule evaluation stops after the first matched rule.
 
-```javascript
+```json
 {
     "namespaces": {
         "my-store": {
@@ -157,7 +157,7 @@ A similar approach could be used to map the current time of day to different mea
 
 Another time-based rule type is `day-of-week` that can be used to map the current day of week to the day of week name or a day of week type (i.e. `WeekDay`/`Weekend`).
 
-```javascript
+```json
 {
     "namespaces": {
         "my-store": {
@@ -237,7 +237,7 @@ Another time-based rule type is `day-of-week` that can be used to map the curren
 
 Finally, here is an example that maps the current time in the user's current time zone and hemisphere (based on location) to a season. The values for the four seasons are `0` for Spring, `1` for Summer, `2` for Fall, and `3` for Winter.
 
-```javascript
+```json
 {
     "namespaces": {
         "my-store": {
@@ -271,7 +271,7 @@ Finally, here is an example that maps the current time in the user's current tim
                                 }
                             ]
                         }
-                    }
+                    ]
                 }
             }
         }
@@ -283,7 +283,7 @@ Finally, here is an example that maps the current time in the user's current tim
 
 The `header-value` rule type can be used with CloudFront location headers to use the value of the header as the field value (i.e. when value mapping is not required). Some examples:
 
-```javascript
+```json
 {
     "namespaces": {
         "my-store": {
