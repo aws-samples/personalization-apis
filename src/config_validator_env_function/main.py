@@ -1,6 +1,13 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: MIT-0
 
+"""
+This custom resource function is responsible for updating the environment
+variables for the ConfigValidatorFunction with the generated values for
+the API Gateway host/URL and CloudFront host/URL. A custom resource had
+to be used to workaround dependency recursion in the CloudFormation template.
+"""
+
 import os
 import boto3
 import json
@@ -19,55 +26,25 @@ cloudfront_host = os.environ['CloudFrontHost']
 
 lambda_client = boto3.client('lambda')
 
-fields_to_keep = [
-  'FunctionName',
-  'Role',
-  'Handler',
-  'Description',
-  'Timeout',
-  'MemorySize',
-  'VpcConfig',
-  'Environment',
-  'Runtime',
-  'DeadLetterConfig',
-  'KMSKeyArn',
-  'TracingConfig',
-  'RevisionId',
-  'Layers',
-  'FileSystemConfigs',
-  'ImageConfig',
-  'EphemeralStorage'
-]
-
 def update_function():
+    """ Updates the configuration validator function's environment variables"""
     logger.info('Updating function configuration: %s', function_arn)
+
+    logger.info('Getting current function configuration/environment variables')
     response = lambda_client.get_function_configuration(FunctionName = function_arn)
     logger.debug(response)
 
-    fields_to_drop = []
-    for key in response.keys():
-      if not key in fields_to_keep:
-        fields_to_drop.append(key)
-
-    for key in fields_to_drop:
-        response.pop(key)
-
-    if 'Layers' in response:
-        # Convert from list of dictionaries to list of ARNs.
-        arns = []
-        for layer in response['Layers']:
-            arns.append(layer['Arn'])
-
-        response['Layers'] = arns
-
-    env = response.setdefault('Environment', {})
+    env = response.get('Environment', {})
     env_vars = env.setdefault('Variables', {})
     env_vars['ApiGatewayHost'] = apigw_host
     env_vars['CloudFrontHost'] = cloudfront_host
 
-    logger.debug('Calling UpdateFunctionConfiguration with payload %s', response)
-
-    response = lambda_client.update_function_configuration(**response)
+    logger.info('Updating function environment variables')
+    logger.debug(env)
+    response = lambda_client.update_function_configuration(
+        FunctionName = function_arn,
+        Environment = env
+    )
     logger.debug(response)
 
 @helper.create
