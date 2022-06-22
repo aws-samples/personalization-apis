@@ -80,14 +80,13 @@ def resolve_auto_values(context_config: Dict, headers: Dict[str,str]) -> Dict[st
                 if not eval_all:
                     break
 
+        if len(values) == 0 and auto_ctx.get('default'):
+            values.add(auto_ctx['default'])
+
         if len(values) > 0:
             resolved_values[field] = {
                 'values': list(values)
             }
-            if auto_ctx.get('type'):
-                resolved_values[field]['type'] = auto_ctx['type']
-        elif auto_ctx.get('default'):
-            resolved['values'] = [ auto_ctx['default'] ]
             if auto_ctx.get('type'):
                 resolved_values[field]['type'] = auto_ctx['type']
 
