@@ -1280,7 +1280,7 @@ Resources:
     Properties:
       DistributionConfig:
         Enabled: true
-        Comment: !Sub 'Swagger UI CDN for ${StagingBucket}'
+        Comment: !Sub 'Swagger UI CDN for Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) for ${StagingBucket}'
         DefaultRootObject: index.html
         PriceClass: PriceClass_100
         HttpVersion: http2

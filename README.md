@@ -180,7 +180,7 @@ If you'd rather install the OAuth2 edge resources manually using AWS SAM, execut
 sam build --use-container --cached --template-file template-edge.yaml && sam deploy --region us-east-1 --config-file samconfig-edge.toml --guided
 ```
 
-Once deployment finishes successfully, sign in to the AWS console, switch to the `N. Virginia - us-east-1` region, browse to the Lambda service page, find the `EdgeAuthFunction`, and deploy it to the CloudFront distribution created when you installed the solution. See the [API authentication documentation](./docs/api_authentication.md) for details.
+Once deployment finishes successfully, sign in to the AWS console, switch to the `N. Virginia - us-east-1` region, browse to the Lambda service page, find the `EdgeAuthFunction`, and deploy it to the CloudFront distribution created when you installed the solution as a Viewer Request. See the [API authentication documentation](./docs/api_authentication.md) for details.
 
 ### Testing the Personalization APIs
 
