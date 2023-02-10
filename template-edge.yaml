@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   (P13N-RT-APIS-EDGE) - Lambda@Edge functions and related resources for the Personalization APIs solution. Since all Lambda@Edge
@@ -10,7 +10,7 @@ Parameters:
     Type: String
     Description: AWS region name where your Cognito user pool is deployed.
     AllowedPattern: ^[a-z]{2}-((?:gov|iso|isob)-)?[a-z]+-\d{1}?$
-    Default: 'us-east-1'
+    Default: "us-east-1"
 
   CognitoUserPoolId:
     Type: String
@@ -41,16 +41,16 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-              - edgelambda.amazonaws.com
-              - lambda.amazonaws.com
-          Action:
-            - sts:AssumeRole
-      Path: '/'
+          - Effect: Allow
+            Principal:
+              Service:
+                - edgelambda.amazonaws.com
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
@@ -62,11 +62,13 @@ Resources:
       Runtime: python3.9
       Policies:
         - Statement:
-          - Effect: Allow
-            Action:
-              - lambda:GetFunction
-              - lambda:UpdateFunctionCode
-            Resource: !GetAtt EdgeAuthFunction.Arn
+            - Effect: Allow
+              Action:
+                - lambda:GetFunction
+                - lambda:UpdateFunctionCode
+              Resource:
+                - !GetAtt EdgeAuthFunction.Arn
+                - !Sub "${EdgeAuthFunction.Arn}:Templated"
 
   UpdateEdgeFunctionCustom:
     Type: Custom::UpdateConfigCustom
