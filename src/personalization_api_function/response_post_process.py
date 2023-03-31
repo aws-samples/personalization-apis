@@ -4,14 +4,19 @@
 """ AWS Lambda response post processor """
 
 import boto3
+import json
+import codecs
 
-from typing import Dict, List, Union
+from typing import Dict
 from http import HTTPStatus
 from aws_lambda_powertools import Logger, Tracer
 from personalization_error import LambdaError
+from personalization_constants import ACTION_RECOMMEND_ITEMS, ACTION_RELATED_ITEMS, ACTION_RERANK_ITEMS
 
 tracer = Tracer()
 logger = Logger(child=True)
+
+PAYLOAD_VERSION = '1.0'
 
 class PostProcessor():
     def __init__(
@@ -25,7 +30,7 @@ class PostProcessor():
             FunctionName = arn,
             InvocationType = 'RequestResponse',
             LogType = 'Tail', #'None'|'Tail',
-            Payload = payload
+            Payload = codecs.encode(json.dumps(payload))
         )
 
         logger.debug(response)
@@ -34,10 +39,10 @@ class PostProcessor():
         if status != HTTPStatus.OK:
             raise LambdaError(status, 'FunctionInvokeError', response.get('FunctionError'))
 
-        return response.get('Payload')
+        return json.load(response.get('Payload'))
 
     @tracer.capture_method
-    def process_recommend_items(self, recommender_config: Dict, variation_config: Dict, user_id: str, response: Dict) -> Dict:
+    def process_recommend_items(self, recommender_path: str, recommender_config: Dict, variation_config: Dict, user_id: str, response: Dict) -> Dict:
         post_process_config = recommender_config.get('responsePostProcessor')
         arn = post_process_config.get('arn')
         if not arn:
@@ -46,10 +51,11 @@ class PostProcessor():
         logger.debug('Invoking post-proces function %s for recommend-items recommendation type', arn)
 
         payload = {
-            'version': '1.0',
-            'action': 'recommend-items',
+            'version': PAYLOAD_VERSION,
+            'action': ACTION_RECOMMEND_ITEMS,
             'recommender': {
-                'path': recommender_config['path']
+                'path': recommender_path,
+                'config': recommender_config
             },
             'variation': variation_config,
             'userId': user_id,
@@ -59,7 +65,7 @@ class PostProcessor():
         return self._invoke_function(arn, payload)
 
     @tracer.capture_method
-    def process_related_items(self, recommender_config: Dict, variation_config: Dict, item_id: str, response: Dict) -> Dict:
+    def process_related_items(self, recommender_path: str, recommender_config: Dict, variation_config: Dict, item_id: str, response: Dict) -> Dict:
         post_process_config = recommender_config.get('responsePostProcessor')
         arn = post_process_config.get('arn')
         if not arn:
@@ -68,10 +74,11 @@ class PostProcessor():
         logger.debug('Invoking function %s for related-items recommendation type', arn)
 
         payload = {
-            'version': '1.0',
-            'action': 'related-items',
+            'version': PAYLOAD_VERSION,
+            'action': ACTION_RELATED_ITEMS,
             'recommender': {
-                'path': recommender_config['path']
+                'path': recommender_path,
+                'config': recommender_config
             },
             'variation': variation_config,
             'itemId': item_id,
@@ -81,7 +88,7 @@ class PostProcessor():
         return self._invoke_function(arn, payload)
 
     @tracer.capture_method
-    def process_rerank_items(self, recommender_config: Dict, variation_config: Dict, user_id: str, response: Dict) -> Dict:
+    def process_rerank_items(self, recommender_path: str, recommender_config: Dict, variation_config: Dict, user_id: str, response: Dict) -> Dict:
         post_process_config = recommender_config.get('responsePostProcessor')
         arn = post_process_config.get('arn')
         if not arn:
@@ -90,10 +97,11 @@ class PostProcessor():
         logger.debug('Invoking function %s for rerank-items recommendation type', arn)
 
         payload = {
-            'version': '1.0',
-            'action': 'rerank-items',
+            'version': PAYLOAD_VERSION,
+            'action': ACTION_RERANK_ITEMS,
             'recommender': {
-                'path': recommender_config['path']
+                'path': recommender_path,
+                'config': recommender_config
             },
             'variation': variation_config,
             'userId': user_id,
