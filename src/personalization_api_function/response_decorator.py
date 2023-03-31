@@ -171,6 +171,9 @@ class LocalDbResponseDecorator(ResponseDecorator):
             # Create lookup dictionary so results from DDB can be efficiently merged into response.
             lookup: Dict[str, List[int]] = {}
             items_key_name = 'itemList' if 'itemList' in response else 'personalizedRanking'
+            if not items_key_name in response:
+                raise ValueError(f'Response is missing "{items_key_name}" property')
+
             for idx,item in enumerate(response[items_key_name]):
                 lookup.setdefault(item['itemId'], []).append(idx)
 
@@ -218,6 +221,8 @@ class DynamoDbResponseDecorator(ResponseDecorator):
 
     def _decorate(self, response: Dict):
         items_key_name = 'itemList' if 'itemList' in response else 'personalizedRanking'
+        if not items_key_name in response:
+            raise ValueError(f'Response is missing "{items_key_name}" property')
 
         # Create lookup dictionary so results from DDB can be efficiently merged into response.
         lookup = {}

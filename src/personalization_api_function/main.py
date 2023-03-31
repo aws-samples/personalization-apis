@@ -292,6 +292,7 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
             decorate_items(namespace, response)
         elif variation.get('type') == 'sagemaker':
             response = sagemaker_resolver.get_recommend_items(
+                    recommender,
                     rec_config,
                     variation,
                     user_id = user_id,
@@ -302,6 +303,7 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
             decorate_items(namespace, response)
         elif variation.get('type') == 'lambda':
             response = lambda_resolver.get_recommend_items(
+                    recommender,
                     rec_config,
                     variation,
                     user_id = user_id,
@@ -389,6 +391,7 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
             decorate_items(namespace, response)
         elif variation.get('type') == 'sagemaker':
             response = sagemaker_resolver.get_related_items(
+                    recommender,
                     rec_config,
                     variation,
                     item_id = item_id,
@@ -400,6 +403,7 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
             decorate_items(namespace, response)
         elif variation.get('type') == 'lambda':
             response = lambda_resolver.get_related_items(
+                    recommender,
                     rec_config,
                     variation,
                     item_id = item_id,
@@ -459,6 +463,7 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
         decorate_items(namespace, response)
     elif variation.get('type') == 'sagemaker':
         response = sagemaker_resolver.rerank_items(
+                recommender,
                 rec_config,
                 variation,
                 user_id = user_id,
@@ -469,6 +474,7 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
         decorate_items(namespace, response)
     elif variation.get('type') == 'lambda':
         response = lambda_resolver.rerank_items(
+                recommender,
                 rec_config,
                 variation,
                 user_id = user_id,
