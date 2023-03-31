@@ -292,6 +292,7 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
             decorate_items(namespace, response)
         elif variation.get('type') == 'sagemaker':
             response = sagemaker_resolver.get_recommend_items(
+                    recommender,
                     rec_config,
                     variation,
                     user_id = user_id,
@@ -302,6 +303,7 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
             decorate_items(namespace, response)
         elif variation.get('type') == 'lambda':
             response = lambda_resolver.get_recommend_items(
+                    recommender,
                     rec_config,
                     variation,
                     user_id = user_id,
@@ -318,7 +320,7 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
             response['matchedExperiment'] = experiment
 
         if post_process_config:
-            response = post_processor.process_recommend_items(rec_config, variation, user_id, response)
+            response = post_processor.process_recommend_items(recommender, rec_config, variation, user_id, response)
 
         if len(response.get('itemList')) > num_results:
             response['itemList'] = response['itemList'][:num_results]
@@ -389,6 +391,7 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
             decorate_items(namespace, response)
         elif variation.get('type') == 'sagemaker':
             response = sagemaker_resolver.get_related_items(
+                    recommender,
                     rec_config,
                     variation,
                     item_id = item_id,
@@ -400,6 +403,7 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
             decorate_items(namespace, response)
         elif variation.get('type') == 'lambda':
             response = lambda_resolver.get_related_items(
+                    recommender,
                     rec_config,
                     variation,
                     item_id = item_id,
@@ -417,7 +421,7 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
             response['matchedExperiment'] = experiment
 
         if post_process_config:
-            response = post_processor.process_related_items(rec_config, variation, item_id, response)
+            response = post_processor.process_related_items(recommender, rec_config, variation, item_id, response)
 
         if len(response.get('itemList')) > num_results:
             response['itemList'] = response['itemList'][:num_results]
@@ -459,6 +463,7 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
         decorate_items(namespace, response)
     elif variation.get('type') == 'sagemaker':
         response = sagemaker_resolver.rerank_items(
+                recommender,
                 rec_config,
                 variation,
                 user_id = user_id,
@@ -469,6 +474,7 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
         decorate_items(namespace, response)
     elif variation.get('type') == 'lambda':
         response = lambda_resolver.rerank_items(
+                recommender,
                 rec_config,
                 variation,
                 user_id = user_id,
@@ -486,7 +492,7 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
 
     post_process_config = rec_config.get('responsePostProcessor')
     if post_process_config:
-        response = post_processor.process_rerank_items(rec_config, variation, user_id, response)
+        response = post_processor.process_rerank_items(recommender, rec_config, variation, user_id, response)
 
     return response, variation
 

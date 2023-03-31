@@ -107,14 +107,14 @@ Here is an example of a single namespace configuration for `my-app-1` that has a
 
 #### AWS Lambda function variation
 
-**Experimental/untested**
-
 - `namespaces.{NAMESPACE_KEY}.recommender.{ACTION_TYPE}.{RECOMMENDER_KEY}.variations.{VARIATION_KEY}.type`: Must be `"function"` (required).
 - `namespaces.{NAMESPACE_KEY}.recommender.{ACTION_TYPE}.{RECOMMENDER_KEY}.variations.{VARIATION_KEY}.arn`: The AWS Lambda function ARN (required).
 
+**IMPORTANT:** Make sure to update the IAM role for the PersonalizationHttpApiFunction or PersonalizationRestApiFunction function (PersonalizationApiExecutionRole) to add a policy that allows "lambda:InvokeFunction" for the same function ARN in the configuration. See the [custom_recommender_lambda.py](../samples/lambdas/custom_recommender_lambda.py) for an example.
+
 #### Amazon SageMaker endpoint variation
 
-**Experimental/untested**
+***Experimental/untested***
 
 - `namespaces.{NAMESPACE_KEY}.recommender.{ACTION_TYPE}.{RECOMMENDER_KEY}.variations.{VARIATION_KEY}.type`: Must be `"sagemaker"` (required).
 - `namespaces.{NAMESPACE_KEY}.recommender.{ACTION_TYPE}.{RECOMMENDER_KEY}.variations.{VARIATION_KEY}.endpointName`: Amazon SageMaker endpoint name (required).
