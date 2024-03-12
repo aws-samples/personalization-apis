@@ -6,7 +6,7 @@ The reason for performing authentication in CloudFront using this function rathe
 
 You can install the OAuth2 edge resources into the us-east-1 region using the "Launch Stack" button below.
 
-[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://s3.amazonaws.com/personalize-solution-staging-us-east-1/personalization-apis-edge/template.yaml&stackName=personalization-apis-edge)
+[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://d2peeor3oplhc6.cloudfront.net/personalization-apis-edge/template.yaml&stackName=personalization-apis-edge)
 
 If you'd rather install the OAuth2 edge resources manually using AWS SAM, execute the following commands at the command line (the `deploy_edge_auth.sh` shell script can also be used as a shortcut).
 
