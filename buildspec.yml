@@ -17,4 +17,8 @@ phases:
       - echo Entered the build phase...
       - chmod +x stage.sh
       - ./stage.sh template.yaml personalize-solution-staging-us-east-1 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-us-east-2 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-us-west-2 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-eu-west-1 personalization-apis/
+      - ./stage.sh template.yaml personalize-solution-staging-ap-southeast-2 personalization-apis/
       - ./stage.sh template-edge.yaml personalize-solution-staging-us-east-1 personalization-apis-edge/

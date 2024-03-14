@@ -84,11 +84,11 @@ To support easy single-click deployments, this solution has been packaged and st
 
 Region name | Region code | Launch
 --- | --- | ---
-US East (N. Virginia) | us-east-1 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://d2peeor3oplhc6.cloudfront.net/personalization-apis/template.yaml&stackName=personalization-apis)
-US East (Ohio) | us-east-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/create/review?templateURL=https://d2peeor3oplhc6.cloudfront.net/personalization-apis/template.yaml&stackName=personalization-apis)
-US West (Oregon) | us-west-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/create/review?templateURL=https://d2peeor3oplhc6.cloudfront.net/personalization-apis/template.yaml&stackName=personalization-apis)
-Europe (Ireland) | eu-west-1 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/create/review?templateURL=https://d2peeor3oplhc6.cloudfront.net/personalization-apis/template.yaml&stackName=personalization-apis)
-Asia Pacific (Sydney) | ap-southeast-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/create/review?templateURL=https://d2peeor3oplhc6.cloudfront.net/personalization-apis/template.yaml&stackName=personalization-apis)
+US East (N. Virginia) | us-east-1 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://s3.amazonaws.com/personalize-solution-staging-us-east-1/personalization-apis/template.yaml&stackName=personalization-apis)
+US East (Ohio) | us-east-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/create/review?templateURL=https://s3-us-east-2.amazonaws.com/personalize-solution-staging-us-east-2/personalization-apis/template.yaml&stackName=personalization-apis)
+US West (Oregon) | us-west-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/create/review?templateURL=https://s3-us-west-2.amazonaws.com/personalize-solution-staging-us-west-2/personalization-apis/template.yaml&stackName=personalization-apis)
+Europe (Ireland) | eu-west-1 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=eu-west-1#/stacks/create/review?templateURL=https://s3-eu-west-1.amazonaws.com/personalize-solution-staging-eu-west-1/personalization-apis/template.yaml&stackName=personalization-apis)
+Asia Pacific (Sydney) | ap-southeast-2 | [![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=ap-southeast-2#/stacks/create/review?templateURL=https://s3-ap-southeast-2.amazonaws.com/personalize-solution-staging-ap-southeast-2/personalization-apis/template.yaml&stackName=personalization-apis)
 
 ### Option 2: Install using Serverless Application Model (manual installation)
 
@@ -172,7 +172,7 @@ In order to authenticate OAuth2 JWT tokens from Amazon Cognito within CloudFront
 
 You can install the OAuth2 edge resources into the us-east-1 region using the "Launch Stack" button below.
 
-[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://d2peeor3oplhc6.cloudfront.net/personalization-apis-edge/template.yaml&stackName=personalization-apis-edge)
+[![Launch Stack](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/create/review?templateURL=https://s3.amazonaws.com/personalize-solution-staging-us-east-1/personalization-apis-edge/template.yaml&stackName=personalization-apis-edge)
 
 If you'd rather install the OAuth2 edge resources manually using AWS SAM, execute the following commands at the command line (the `deploy_edge_auth.sh` shell script can also be used as a shortcut).
 
