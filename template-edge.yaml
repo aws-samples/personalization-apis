@@ -29,7 +29,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       Description: Edge function that verifies JWT tokens in CloudFront to maximize caching and reduce latency
-      Runtime: nodejs14.x
+      Runtime: nodejs18.x
       Timeout: 3
       CodeUri: src/edge_auth_function
       Handler: index.handler
@@ -59,7 +59,7 @@ Resources:
     Properties:
       CodeUri: src/edge_update_function
       Handler: main.lambda_handler
-      Runtime: python3.9
+      Runtime: python3.11
       Policies:
         - Statement:
             - Effect: Allow
