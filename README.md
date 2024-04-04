@@ -186,6 +186,8 @@ Once deployment finishes successfully, sign in to the AWS console, switch to the
 
 At this point you should be able to test the Personalization API endpoints. You can do this with a utility like [Swagger UI](https://swagger.io/), [Postman](https://www.postman.com/), or the cURL command. This solution automatically generates an [OpenAPI/Swagger](https://www.openapis.org/) specification file each time the application configuration is updated. You can find the generated OpenAPI spec file in the staging bucket under `/openapi/openapi.json` (you can find the staging bucket name in the CloudFormation output parameters). If you deployed the solution with the `CreateSwaggerUI` parameter set to `Yes`, a public web UI endpoint was created that hosts the generated OpenAPI/Swagger specification. See the `SwaggerUI` CloudFormation output parameter for the URL to this endpoint. Otherwise, the generated OpenAPI/Swagger spec file can be downloaded from the staging bucket and imported into a tool such as Postman.
 
+![Personalization APIs Swagger UI](images/swagger_ui.png)
+
 The root URL to use for testing your APIs depends on the deployment configuration you selected when installing the solution:
 
 - If you deployed with the `API-Gateway-REST` API entry point type:
