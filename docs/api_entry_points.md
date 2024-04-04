@@ -4,10 +4,18 @@ The API entry points have consistent and predictable paths based on your [config
 
 ## OpenAPI/Swagger specification
 
-Each time the application [configuration](./configuration.md) is deployed in AppConfig, the solution will generate an [OpenAPI/Swagger](https://www.openapis.org/) specification file based the configuration. The OpenAPI specification file is written to the `/openapi` folder in the staging bucket created as part of this project. You can use this specification file to test your APIs using a utility such as [Postman](https://www.postman.com/) or the [Swagger Editor](https://editor.swagger.io/) tool as well as generating clients for your APIs in a variety of programming languages.
+Each time the application [configuration](./configuration.md) is deployed in AppConfig, the solution will generate an [OpenAPI/Swagger](https://www.openapis.org/) specification file based the configuration. The OpenAPI specification file is written to the `/openapi` folder in the staging bucket created as part of this project. If you selected to have the Swagger UI included in your deployment of this project, you can use the deployed Swagger UI to inspect and test your APIs (see screenshot below). The URL for the Swagger UI can be found in the CloudFormation output parameters from your deployment of this project. After changing and deploying the application configuration in AppConfig, just refresh the Swagger UI to have it reload the latest OpenAPI spec file from the staging bucket.
 
-![Personalization APIs Postman](../images/postman.png)
+### Swagger UI
+![Personalization APIs Swagger UI](../images/swagger_ui.png)
+
+Alternatively, you can use the generated OpenAPI specification file to test your APIs using a utility such as the [Swagger Editor](https://editor.swagger.io/) or [Postman](https://www.postman.com/) tool as well as generating clients for your APIs in a variety of programming languages. Just download the generated OpenAPI spec file from the S3 staging bucket and import it into the Swagger Editor or Postman.
+
+### Swagger editor
 ![Personalization APIs Swagger Editor](../images/swagger_editor.png)
+
+### Postman
+![Personalization APIs Postman](../images/postman.png)
 
 ## Host names
 

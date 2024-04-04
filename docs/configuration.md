@@ -258,6 +258,8 @@ For the above configuration, every API response will have a response header like
 
 By changing the version in your configuration each time you make a change, you can verify that it has been deployed by checking this response header.
 
+If you are using the Swagger UI to test and inspect your APIs, you will also see the version displayed at the stop of the Swagger page.
+
 ### Configuration caching
 
-The Personalization APIs Lambda function uses the [AWS AppConfig Lambda extension](https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-integration-lambda-extensions.html) to access the configuration. You can control how often the extension polls AppConfig for configuration changes via the `AWS_APPCONFIG_EXTENSION_POLL_INTERVAL_SECONDS` environment variable. The default is every 45 seconds. The change the polling interval, add/change the `AWS_APPCONFIG_EXTENSION_POLL_INTERVAL_SECONDS` environment variable **on the Personalization APIs lambda function**. You can find the ARN for this function in the CloudFormation output parameters when you deployed the solution or by searching for the function in the AWS console for Lambda.
+The Personalization APIs Lambda function uses the [AWS AppConfig Lambda extension](https://docs.aws.amazon.com/appconfig/latest/userguide/appconfig-integration-lambda-extensions.html) to access the configuration. You can control how often the extension polls AppConfig for configuration changes via the `AWS_APPCONFIG_EXTENSION_POLL_INTERVAL_SECONDS` environment variable. The default is every 45 seconds. To change the polling interval, add/change the `AWS_APPCONFIG_EXTENSION_POLL_INTERVAL_SECONDS` environment variable **on the Personalization APIs lambda function**. You can find the ARN for this function in the CloudFormation output parameters when you deployed the solution or by searching for the function in the AWS console for Lambda.
