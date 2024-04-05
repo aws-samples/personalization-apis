@@ -199,7 +199,7 @@ Globals:
       CreatedBy: Personalization-APIs-Solution
   Function:
     Timeout: 5
-    Runtime: python3.11
+    Runtime: python3.12
     Tracing: Active
     Environment:
       Variables:
@@ -226,9 +226,9 @@ Resources:
     Properties:
       ContentUri: src/layer
       CompatibleRuntimes:
-        - python3.11
+        - python3.12
     Metadata:
-      BuildMethod: python3.11
+      BuildMethod: python3.12
 
 ##########################################################################
 #  API Gateway Resources                                                 #
@@ -340,7 +340,7 @@ Resources:
       MemorySize: 1024
       Layers:
         - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
-        - !Sub 'arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17'
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:68
         - !Ref CommonLayer
       Environment:
         Variables:
@@ -398,7 +398,7 @@ Resources:
       MemorySize: 1024
       Layers:
         - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:68
         - !Ref CommonLayer
       Environment:
         Variables:
@@ -690,7 +690,7 @@ Resources:
       MemorySize: 1024
       Layers:
         - !FindInMap [RegionMap, !Ref 'AWS::Region', AppConfigExtensionArn]
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:68
         - !Ref CommonLayer
       Policies:
         - Statement:
@@ -741,7 +741,7 @@ Resources:
       Handler: main.lambda_handler
       MemorySize: 256
       Layers:
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:68
       Environment:
         Variables:
           StagingBucket: !Sub '${AWS::StackName}-${AWS::Region}-${AWS::AccountId}-staging'
@@ -891,7 +891,7 @@ Resources:
       Handler: main.lambda_handler
       MemorySize: 256
       Layers:
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:68
       Role: !GetAtt SyncCacheSettingsExecutionRole.Arn
       Environment:
         Variables:
@@ -963,7 +963,7 @@ Resources:
       Handler: main.lambda_handler
       MemorySize: 256
       Layers:
-        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:17
+        - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2:68
       Policies:
         - Statement:
           - Effect: Allow
@@ -1024,11 +1024,11 @@ Resources:
     Properties:
       DistributionConfig:
         Enabled: true
-        Comment: !Sub 'Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) CDN for ${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+        Comment: !If [ DeployApiGatewayHttp, !Sub 'Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) CDN for ${HttpApi}.execute-api.${AWS::Region}.amazonaws.com', !Sub 'Personalization API (${ApiEntryPointType}/${CacheScheme}/${EnvironmentName}) CDN for ${RestApi}.execute-api.${AWS::Region}.amazonaws.com' ]
         PriceClass: PriceClass_200
         HttpVersion: http2
         Origins:
-          - DomainName: !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+          - DomainName: !If [ DeployApiGatewayHttp, !Sub '${HttpApi}.execute-api.${AWS::Region}.amazonaws.com', !Sub '${RestApi}.execute-api.${AWS::Region}.amazonaws.com' ]
             Id: APIGW
             OriginPath: !Sub '/${EnvironmentName}'
             CustomOriginConfig:
@@ -1196,7 +1196,7 @@ Resources:
             cfnresponse.send(event, context, responseStatus, responseData)
 
       Handler: index.handler
-      Runtime: python3.11
+      Runtime: python3.12
       Timeout: 300
       Role: !GetAtt CleanupBucketLambdaExecutionRole.Arn
 

@@ -78,6 +78,9 @@ class ResponseDecorator(ABC):
                     ResponseDecorator._decorators[namespace] = DynamoDbResponseDecorator(table_name_prefix + namespace, primary_key_name)
                     prepared_count += 1
 
+                elif type == 'personalize':
+                    logger.debug('Personalize inference metadata does not require preparation')
+
             ResponseDecorator._last_prepare_check = prepare_done = time.time()
 
             if prepared_count > 0:
@@ -102,8 +105,10 @@ class ResponseDecorator(ABC):
             type = metadata_config.get('type')
             if  type == 'localdb':
                 decorator = LocalDbResponseDecorator(namespace)
-            elif metadata_config.get('type') == 'dynamodb':
+            elif type == 'dynamodb':
                 decorator = DynamoDbResponseDecorator(table_name_prefix + namespace, primary_key_name)
+            elif type == 'personalize':
+                decorator = PersonalizeResponseDecorator(namespace)
             else:
                 raise ConfigError(HTTPStatus.INTERNAL_SERVER_ERROR, 'UnsupportedInferenceItemMetadataType', 'Inference item metadata type is not supported')
 
@@ -316,3 +321,12 @@ class DynamoDbResponseDecorator(ResponseDecorator):
                 break
 
         return retrieved
+
+class PersonalizeResponseDecorator(ResponseDecorator):
+    def __init__(self, namespace: str):
+        self.namespace = namespace
+
+    @tracer.capture_method
+    def decorate(self, response: Dict):
+        # Nothing to do since Personalize already returns "metadata" for each item
+        pass

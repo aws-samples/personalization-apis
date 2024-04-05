@@ -230,14 +230,15 @@ def resolve_filter_parameters(variation_config: Dict, user_id: str) -> Tuple:
 
     return filter_arn, filter_values
 
-@tracer.capture_method
-def decorate_items(namespace: str, response: Dict):
-    """ Decorates items in the response with item metadata that is stored in a low-latency datastore
+def try_decorate_items() -> bool:
+    """ Returns whether the caller wants to have returned items decorated with metadata (default is to decorate)"""
+    return app.current_event.get_query_string_value(name='decorateItems', default_value='1').lower() in ['1','yes','true']
 
-    The caller can control whether item decoration is done or not. Default is to decorate.
+@tracer.capture_method
+def post_decorate_items(namespace: str, response: Dict):
+    """ Decorates items in the response with item metadata from the recommender or that is stored in a low-latency datastore
     """
-    decorate_items = app.current_event.get_query_string_value(name='decorateItems', default_value='1').lower() in ['1','yes','true']
-    if decorate_items:
+    if try_decorate_items():
         decorator = ResponseDecorator.get_instance(namespace, config)
         if decorator:
             decorator.decorate(response)
@@ -281,15 +282,17 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
             inference_num_results = min(inference_num_results, PERSONALIZE_GET_RECS_MAX_NUM_RESULTS)
 
             response = personalize_resolver.get_recommend_items(
+                    variation_config = variation,
                     arn = arn,
                     user_id = user_id,
                     num_results = inference_num_results,
                     filter_arn = filter_arn,
                     filter_values = filter_values,
-                    context = context
+                    context = context,
+                    include_metadata = try_decorate_items()
             )
 
-            decorate_items(namespace, response)
+            post_decorate_items(namespace, response)
         elif variation.get('type') == 'sagemaker':
             response = sagemaker_resolver.get_recommend_items(
                     recommender,
@@ -300,7 +303,7 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
                     context = context
             )
 
-            decorate_items(namespace, response)
+            post_decorate_items(namespace, response)
         elif variation.get('type') == 'lambda':
             response = lambda_resolver.get_recommend_items(
                     recommender,
@@ -311,7 +314,7 @@ def get_recommend_items(namespace: str, recommender: str, user_id: str) -> Respo
                     context = context
             )
 
-            decorate_items(namespace, response)
+            post_decorate_items(namespace, response)
         elif variation.get('type') == 'http':
             url = variation['url'].format(**app.current_event.query_string_parameters)
             response = json.loads(urllib.request.urlopen(url).read())
@@ -379,16 +382,18 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
             inference_num_results = min(inference_num_results, PERSONALIZE_GET_RECS_MAX_NUM_RESULTS)
 
             response =  personalize_resolver.get_related_items(
+                    variation_config = variation,
                     arn = arn,
                     item_id = item_id,
                     num_results = inference_num_results,
                     filter_arn = filter_arn,
                     filter_values = filter_values,
                     user_id = user_id,
-                    context = context
+                    context = context,
+                    include_metadata = try_decorate_items()
             )
 
-            decorate_items(namespace, response)
+            post_decorate_items(namespace, response)
         elif variation.get('type') == 'sagemaker':
             response = sagemaker_resolver.get_related_items(
                     recommender,
@@ -400,7 +405,7 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
                     context = context
             )
 
-            decorate_items(namespace, response)
+            post_decorate_items(namespace, response)
         elif variation.get('type') == 'lambda':
             response = lambda_resolver.get_related_items(
                     recommender,
@@ -412,7 +417,7 @@ def get_related_items(namespace: str, recommender: str, item_id: str) -> Respons
                     context = context
             )
 
-            decorate_items(namespace, response)
+            post_decorate_items(namespace, response)
         elif variation.get('type') == 'http':
             url = variation['url'].format(**app.current_event.query_string_parameters)
             response = json.loads(urllib.request.urlopen(url).read())
@@ -452,15 +457,17 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
         filter_arn, filter_values = resolve_filter_parameters(variation, user_id)
 
         response = personalize_resolver.rerank_items(
+                variation_config = variation,
                 arn = arn,
                 user_id = user_id,
                 input_list = item_ids,
                 filter_arn = filter_arn,
                 filter_values = filter_values,
-                context = context
+                context = context,
+                include_metadata = try_decorate_items()
         )
 
-        decorate_items(namespace, response)
+        post_decorate_items(namespace, response)
     elif variation.get('type') == 'sagemaker':
         response = sagemaker_resolver.rerank_items(
                 recommender,
@@ -471,7 +478,7 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
                 context = context
         )
 
-        decorate_items(namespace, response)
+        post_decorate_items(namespace, response)
     elif variation.get('type') == 'lambda':
         response = lambda_resolver.rerank_items(
                 recommender,
@@ -482,7 +489,7 @@ def _rerank_items(namespace: str, recommender: str, user_id: str, item_ids: List
                 context = context
         )
 
-        decorate_items(namespace, response)
+        post_decorate_items(namespace, response)
     elif variation.get('type') == 'http':
         url = variation['url'].format(**app.current_event.query_string_parameters)
         response = json.loads(urllib.request.urlopen(url).read())

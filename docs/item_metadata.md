@@ -1,8 +1,73 @@
 # Personalization APIs Inference Item Metadata
 
-Inference item metadata is used to decorate responses from your origin recommenders with the information needed to fully render recommendations in client applications. You upload your inference item metadata to the S3 staging bucket created by the Personalization APIs deployment. The name of this bucket can be found in the CloudFormation output parameters (look for the `StagingBucket` parameter). When you upload your inference item metadata (described in detail below) to the appropriate folder in the staging bucket (based on the namespace key), an AWS Lambda function is invoked that updates the appropriate datastore(s) based on the configuration described below. **Therefore, you must update your configuration with inference item metadata configuration before uploading your item metadata to the staging bucket.**
+Having access to item metadata (item name, price, description, category, brand, genre, etc) directly in recommender responses allows applications to more easily render recommendations in their UI. However, many primitive recommendation systems, such as Amazon Personalize, provide only item IDs and not item metadata in their responses. Although Amazon Personalize campaigns and recommenders can be configured to return item metadata, there are limits on the number of columns (10) and items (50) that can be returned when item metadata for responses is enabled. There is also an additional charge to have item metadata returned in Personalize responses (see the [pricing page](https://aws.amazon.com/personalize/pricing/) for details).
 
-## Local DBM datastore
+This project provides the ability to leverage the native capability of underlying recommenders from Amazon Personalize to provide item metadata as well as an alternative sidecar item metadata storage and retrievel mechanism that injects item metadata in responses before they are returned by the API. See the detailed instructions below on each mechanism.
+
+** Keep in mind that item metadata in responses can be controlled by the `decorateItems` query string parameter to API requests. By default item metadata is enabled (if configured as described below) but it can be disabled at the request level by setting `decorateItems` to 0/false/no in your requests.
+
+## Personalize item metadata
+
+If you're using Amazon Personalize campaigns and/or recommenders with a deployment of this project and your use case is within the 10 metadata returned column and 50 item limit, then using the native Amazon Personalize item metadata return feature may be the best option. Some configuration is still required to use this approach.
+
+First, you will have to enable metadata to be returned from your Amazon Personalize campaigns and/or recommenders. This can be done in the Amazon Personalize console or API when creating your campaigns or recommenders (for the API/SDK, see the `campaignConfig.enableMetadataWithRecommendations` parameter for the [CreateCampaign](https://docs.aws.amazon.com/personalize/latest/dg/API_CreateCampaign.html) and [UpdateCampaign](https://docs.aws.amazon.com/personalize/latest/dg/API_UpdateCampaign.html) APIs for campaigns and the `recommenderConfig.enableMetadataWithRecommendations` parameter for the [CreateRecommender](https://docs.aws.amazon.com/personalize/latest/dg/API_CreateRecommender.html) and [UpdateRecommender](https://docs.aws.amazon.com/personalize/latest/dg/API_UpdateRecommender.html) APIs for recommenders).
+
+Once metadata has been enabled for your Amazon Personalize campaigns/recommenders, you can then configure the Personalization APIs to request item metadata when making inference calls. This is done with the `inferenceMetadata` section in the Personalization APIs configuration. Below is an example of using item metadata provided by Amazon Personalize (`type` of `personalize`) and specifying that the columns `NAME`, `DESCRIPTION`, `PRICE`, and `CATEGORY` should be requested from Personalize and returned by the API response. The column names must match columns in your Amazon Personalize items dataset schema.
+
+```json
+{
+    "namespaces": {
+        "my-app-1": {
+            "inferenceItemMetadata": {
+                "type": "personalize",
+                "itemColumns": [
+                    "NAME",
+                    "DESCRIPTION",
+                    "PRICE",
+                    "CATEGORY"
+                ]
+            },
+            "recommenders": {
+            }
+        }
+    }
+}
+```
+
+- `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.type`: Must be `"personalize"` (required to use Amazon Personalize provided item metadata).
+- `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.itemColumns`: Array of column names to request Personalize to return in responses (required).
+
+Although the example above shows the `inferenceItemMetadata` being specified at the namespace level, it can also be specified at the recommender or variation level instead. This allows you override item metadata configurations at different levels of the configuration.
+
+An API response that includes item metadata from Amazon Personalize would look something like this where the `metadata` dictionary in the response includes the item metadata columns that were configured in `inferenceItemMetadata.itemColumns`:
+
+
+```json
+{
+  "itemList": [
+    {
+      "itemId": "f6231107-7050-44ea-ac6a-dcb09f4a0b33",
+      "score": 0.298052,
+      "metadata": {
+        "name": "Camping Lamp",
+        "category": "outdoors",
+        "description": "Be sure to bring this camping lamp with you to the outdoors",
+        "price": 19.99
+      }
+    }
+  ]
+}
+```
+
+Note that Amazon Personalize will convert snake case column names to camel case in the response. For example, the schema column `BRAND_NAME` will be converted to `brandName` in the response. In addition, categorical field values will be returned as formatted when they were ingested (i.e., `ONE|TWO|THREE`) into Amazon Personalize rather than being returned as an array of values (i.e., `["ONE","TWO","THREE"]`)
+
+## Sidecar item metadata storage, retrieval, and injection
+
+As mentioned above, the Personalization APIs project also supports an item metadata sidecar feature whereby item metadata is injected into recommender responses before they are returned from the API layer. There are currently two sidecar implementations supported by the project.
+
+To take advantage of the sidecar item metadata capability, you upload your inference item metadata to the S3 staging bucket created by the Personalization APIs deployment. The name of this bucket can be found in the CloudFormation output parameters (look for the `StagingBucket` output parameter). When you upload your inference item metadata (described in detail below) to the appropriate folder in the staging bucket (the folder name is based on the namespace key), an AWS Lambda function is invoked that automatically updates the appropriate sidecar datastore(s) based on the configuration described below. **Therefore, it's vital that you update your configuration with inference item metadata configuration before uploading your item metadata to the staging bucket.**
+
+### Local DBM datastore
 
 Declares that item metadata should be managed in a local DBM datastore for a namespace that is automatically downloaded from S3 and stored on the local Lambda volume of the API origin function. This option provides the lowest possible latency for item metadata decoration (~1-3ms) but is not suitable for very large item catalogs for when a large number of namespaces are served by the same Personalization APIs deployment.
 
@@ -24,7 +89,7 @@ Declares that item metadata should be managed in a local DBM datastore for a nam
 - `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.type`: Must be `"localdb"` (required).
 - `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.syncInterval`: How often to sync DBM files from the S3 staging bucket in seconds (optional, default is 300 seconds).
 
-## Amazon DynamoDB tables
+### Amazon DynamoDB tables
 
 Declares that a Amazon DynamoDB table should be used to query for item metadata for a particular namespace. The table can optionally be automatically provisioned by the Personalization APIs solution (when the configuration changes) or you can create the table directly (see `autoProvision` field). The table name is derived based on a concatenation of `PersonalizationApiItemMetadata_` and the namespace key. So for the example configuration fragment below, the table name would be `PersonalizationApiItemMetadata_my-app1`. Therefore, if you create the DynamoDB table yourself, you must use the apppropriate table name.
 
@@ -54,7 +119,7 @@ Declares that a Amazon DynamoDB table should be used to query for item metadata 
 - `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.provisionedThroughput.readCapacityUnits`: Read capacity units (required if `billingMode` is `"PROVISIONED"`).
 - `namespaces.{NAMESPACE_KEY}.inferenceItemMetadata.provisionedThroughput.writeCapacityUnits`: Write capacity units (required if `billingMode` is `"PROVISIONED"`).
 
-## Preparing and Uploading Inference Item Metadata to S3
+### Preparing and Uploading Inference Item Metadata to S3
 
 When the Personalization APIs solution is deployed, an S3 bucket is created that is used as a staging area for uploading item metadata. The bucket name can be determined from the CloudFormation output parameter named `StagingBucket`. To provide inference item metadata for your items to the Personalization APIs solution, create a [JSON Lines](https://jsonlines.org/) file for each namespace where each file contains metadata for every item that could be recommended by recommenders for that namespace. All of the fields for an item's ID will be used to decorate the response for the item. For example, the following JSONL fragment includes metadata for 6 products for a sample e-commerce item catalog.
 
