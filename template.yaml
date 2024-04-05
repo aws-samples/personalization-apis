@@ -199,7 +199,7 @@ Globals:
       CreatedBy: Personalization-APIs-Solution
   Function:
     Timeout: 5
-    Runtime: python3.12
+    Runtime: python3.11
     Tracing: Active
     Environment:
       Variables:
@@ -226,9 +226,9 @@ Resources:
     Properties:
       ContentUri: src/layer
       CompatibleRuntimes:
-        - python3.12
+        - python3.11
     Metadata:
-      BuildMethod: python3.12
+      BuildMethod: python3.11
 
 ##########################################################################
 #  API Gateway Resources                                                 #
@@ -1196,7 +1196,7 @@ Resources:
             cfnresponse.send(event, context, responseStatus, responseData)
 
       Handler: index.handler
-      Runtime: python3.12
+      Runtime: python3.11
       Timeout: 300
       Role: !GetAtt CleanupBucketLambdaExecutionRole.Arn
 
