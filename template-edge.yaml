@@ -59,7 +59,7 @@ Resources:
     Properties:
       CodeUri: src/edge_update_function
       Handler: main.lambda_handler
-      Runtime: python3.12
+      Runtime: python3.11
       Policies:
         - Statement:
             - Effect: Allow
