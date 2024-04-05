@@ -25,7 +25,18 @@ class PersonalizeResolver():
         self.personalize_runtime = personalize
 
     @tracer.capture_method
-    def get_recommend_items(self, arn: str, user_id: str, num_results: int = 25, filter_arn: str = None, filter_values: Union[str,Dict] = None, context: Union[str,Dict] = None) -> Dict:
+    def get_recommend_items(
+            self,
+            variation_config: Dict,
+            arn: str,
+            user_id: str,
+            num_results: int = 25,
+            filter_arn: str = None,
+            filter_values: Union[str,Dict] = None,
+            context: Union[str,Dict] = None,
+            include_metadata: bool = True
+        ) -> Dict:
+
         if not arn:
             raise PersonalizeError(HTTPStatus.NOT_FOUND, 'RecommenderArnNotConfigured', 'Personalize recommender/campaign ARN has not been configured for this namespace and recommender name')
 
@@ -52,6 +63,13 @@ class PersonalizeResolver():
                 context = json.loads(context)
             params['context'] = context
 
+        metadata_config = variation_config.get('inferenceItemMetadata')
+        if include_metadata and metadata_config and metadata_config.get('type') == 'personalize':
+            item_columns = metadata_config.get('itemColumns')
+            params['metadataColumns'] = {
+                'ITEMS': item_columns
+            }
+
         logger.debug('Calling personalize.get_recommendations() with arguments: %s', params)
 
         try:
@@ -67,7 +85,19 @@ class PersonalizeResolver():
         return response
 
     @tracer.capture_method
-    def get_related_items(self, arn: str, item_id: str, num_results: int = 25, filter_arn: str = None, filter_values: Union[str,Dict] = None, user_id: str = None, context: Union[str,Dict] = None) -> Dict:
+    def get_related_items(
+            self,
+            variation_config: Dict,
+            arn: str,
+            item_id: str,
+            num_results: int = 25,
+            filter_arn: str = None,
+            filter_values: Union[str,Dict] = None,
+            user_id: str = None,
+            context: Union[str,Dict] = None,
+            include_metadata: bool = True
+        ) -> Dict:
+
         if not arn:
             raise PersonalizeError(HTTPStatus.NOT_FOUND, 'RecommenderArnNotConfigured', 'Personalize recommender/campaign ARN has not been configured for this namespace and recommender name')
 
@@ -97,6 +127,13 @@ class PersonalizeResolver():
                 context = json.loads(context)
             params['context'] = context
 
+        metadata_config = variation_config.get('inferenceItemMetadata')
+        if include_metadata and metadata_config and metadata_config.get('type') == 'personalize':
+            item_columns = metadata_config.get('itemColumns')
+            params['metadataColumns'] = {
+                'ITEMS': item_columns
+            }
+
         logger.debug('Calling personalize.get_recommendations() with arguments: %s', params)
 
         try:
@@ -113,7 +150,18 @@ class PersonalizeResolver():
         return response
 
     @tracer.capture_method
-    def rerank_items(self, arn: str, user_id: str, input_list: List[str], filter_arn: str = None, filter_values: Union[str,Dict] = None, context: Union[str,Dict] = None) -> Dict:
+    def rerank_items(
+            self,
+            variation_config: Dict,
+            arn: str,
+            user_id: str,
+            input_list: List[str],
+            filter_arn: str = None,
+            filter_values: Union[str,Dict] = None,
+            context: Union[str,Dict] = None,
+            include_metadata: bool = True
+        ) -> Dict:
+
         if not arn:
             raise PersonalizeError(HTTPStatus.NOT_FOUND, 'RecommenderArnNotConfigured', 'Personalize recommender/campaign ARN has not been configured for this namespace and recommender name')
 
@@ -139,6 +187,13 @@ class PersonalizeResolver():
             if isinstance(context, str):
                 context = json.loads(context)
             params['context'] = context
+
+        metadata_config = variation_config.get('inferenceItemMetadata')
+        if include_metadata and metadata_config and metadata_config.get('type') == 'personalize':
+            item_columns = metadata_config.get('itemColumns')
+            params['metadataColumns'] = {
+                'ITEMS': item_columns
+            }
 
         logger.debug('Calling personalize.get_personalized_ranking() with arguments: %s', params)
 

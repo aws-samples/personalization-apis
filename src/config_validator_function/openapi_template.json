@@ -155,7 +155,7 @@
             },
             "decorateItems": {
                 "name": "decorateItems",
-                "description": "Controls whether item IDs returned from the origin recommender are decorated with [item metadata](./item_metadata.md) in the response. The values `1`, `yes`, and `true` (case-insensitive) will be interpreted as `true`. Any other value will be interpreted as `false`. The default value is `true`. Since this parameter is included in the cache key for response caching, it is important to use consistent values across your client applications (to maximize cache hit rate).",
+                "description": "Controls whether item IDs returned from the origin recommender are decorated with item metadata in the response. The values `1`, `yes`, and `true` (case-insensitive) will be interpreted as `true`. Any other value will be interpreted as `false`. The default value is `true`. Since this parameter is included in the cache key for response caching, it is important to use consistent values across your client applications (to maximize cache hit rate).",
                 "in": "query",
                 "required": false,
                 "schema": {
