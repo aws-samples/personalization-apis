@@ -25,5 +25,7 @@ stack_name = "p13n-apis-noauth"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "ApplicationName=\"P13n-APIs-noauth\" EnvironmentName=\"prod\" TimeZone=\"UTC\" AuthenticationScheme=\"None\" CreateCognitoResources=\"No\" ApiEntryPointType=\"API-Gateway-HTTP\" CacheScheme=\"CloudFront\" GenerateConfigDatasetGroupNames=\"retaildemostore-products,personalize-poc-movielens-20m\""
+parameter_overrides = "ApplicationName=\"P13n-APIs-noauth\" EnvironmentName=\"prod\" TimeZone=\"UTC\" AuthenticationScheme=\"None\" CreateCognitoResources=\"No\" ApiEntryPointType=\"API-Gateway-HTTP\" CacheScheme=\"CloudFront\" GenerateConfigDatasetGroupNames=\"retaildemostore-products,personalize-poc-movielens-20m\" CreateSwaggerUI=\"Yes\""
 image_repositories = []
+resolve_s3 = true
+s3_prefix = "p13n-apis-noauth"

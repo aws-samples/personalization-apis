@@ -176,7 +176,7 @@
                                 "type": {
                                     "type": "string",
                                     "enum": [ "personalize-campaign", "personalize-recommender" ],
-                                    "description": ""
+                                    "description": "Recommender type: campaign or domain recommender"
                                 },
                                 "arn": {
                                     "type": "string",
@@ -509,6 +509,25 @@
         "inferenceItemMetadata": {
             "description": "Inference item metadata datastore configuration. Defines how the Personalization APIs store and cache item metadata used to decorate responses.",
             "oneOf": [
+                {
+                    "type": "object",
+                    "description": "Personalize-provided item metadata in the Personalize response. IMPORTANT: the Personalize campaign/recommender must have item metadata return enabled for this to work (see enableMetadataWithRecommendations parameter).",
+                    "required": [ "type" ],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [ "personalize" ]
+                        },
+                        "itemColumns": {
+                            "type": "array",
+                            "description": "List of column names to request from Personalize campaign/recommender to return in its responses.",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 {
                     "type": "object",
                     "description": "Local DBM database that is built and downloaded to the local Lambda volume from the S3 staging bucket for each API function instance.",
